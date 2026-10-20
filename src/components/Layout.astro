@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { themesCss, themeFontsHref, getTheme } from '../themes';
+import { link } from '../lib/url';
 
 interface Props {
   title: string;
@@ -10,9 +11,41 @@ interface Props {
   bare?: boolean;
   /** theme ids whose fonts to load; omit to load every theme (editor, gallery) */
   fonts?: (string | undefined)[];
+  /** social preview image: a path inside the site ('og/nova.png') or an absolute URL */
+  image?: string;
+  imageAlt?: string;
+  /** og:type — 'profile' on profile pages */
+  type?: 'website' | 'profile';
+  /** keep app pages (editor, login, account) out of search results */
+  noindex?: boolean;
+  /** schema.org JSON-LD object(s) */
+  jsonLd?: object | object[];
+  /** oEmbed discovery URL (server mode) */
+  oembed?: string;
+  /** extra profile:* meta for og:type=profile */
+  profileName?: { first: string; last: string; username: string };
 }
-const { title, description = 'Developer careers as scroll stories.', theme, bare = false, fonts } = Astro.props;
+const {
+  title,
+  description = "Developer careers as scroll stories — including the work GitHub can't show.",
+  theme,
+  bare = false,
+  fonts,
+  image = 'og.png',
+  imageAlt,
+  type = 'website',
+  noindex = false,
+  jsonLd,
+  oembed,
+  profileName,
+} = Astro.props;
 const themeId = getTheme(theme).id;
+const site = Astro.site ?? new URL(Astro.url.origin);
+const canonical = new URL(Astro.url.pathname.replace(/\/?$/, '/'), site).href;
+const imageUrl = /^https?:/.test(image) ? image : new URL(link(image), site).href;
+const ld = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+// JSON-LD lives in a <script>; neutralise "</" so profile text can't close the tag.
+const ldJson = (o: object) => JSON.stringify(o).replace(/</g, '\\u003c');
 ---
 <!doctype html>
 <html lang="en" data-theme={themeId}>
@@ -21,8 +54,34 @@ const themeId = getTheme(theme).id;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content={getTheme(theme).tokens.bg} />
+    <link rel="icon" href={link('favicon.svg')} type="image/svg+xml" />
+    <link rel="sitemap" href={link('sitemap.xml')} />
+
+    <meta property="og:site_name" content="Showtime" />
+    <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt ?? title} />
+    {profileName && (
+      <>
+        <meta property="profile:first_name" content={profileName.first} />
+        <meta property="profile:last_name" content={profileName.last} />
+        <meta property="profile:username" content={profileName.username} />
+      </>
+    )}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    {oembed && <link rel="alternate" type="application/json+oembed" href={oembed} title={title} />}
+    {ld.map((o) => <script type="application/ld+json" set:html={ldJson(o)} />)}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href={themeFontsHref(fonts)} rel="stylesheet" />

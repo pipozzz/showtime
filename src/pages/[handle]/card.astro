@@ -1,0 +1,76 @@
+---
+// Embeddable card: <iframe src="…/<handle>/card" width="600" height="340">.
+// Self-contained (no layout chrome), opens the full stage in the top window.
+import { SERVER_MODE, store, totals, type Profile } from '../../lib/profiles';
+import { getTheme, themesCss, themeFontsHref } from '../../themes';
+import { link, pageLink } from '../../lib/url';
+
+export async function getStaticPaths() {
+  return (await store.list()).map((p) => ({ params: { handle: p.handle }, props: { p } }));
+}
+
+let p = (Astro.props as { p?: Profile }).p;
+if (SERVER_MODE) {
+  p = await store.get(Astro.params.handle!);
+  if (!p) return new Response(null, { status: 404 });
+  Astro.response.headers.set('Content-Security-Policy', 'frame-ancestors *');
+  Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+}
+const profile = p!;
+const t = totals(profile);
+const theme = getTheme(profile.theme);
+const [first, ...rest] = profile.profile.name.split(' ');
+const stage = new URL(pageLink(profile.handle), Astro.site ?? Astro.url.origin).href;
+const stats = [
+  t.years > 0 && [t.years, 'years'],
+  t.all > 0 && [t.all.toLocaleString('en'), 'commits'],
+  t.clients > 0 && [t.clients, 'clients'],
+  t.all > 0 && [`${t.privateShare}%`, 'private'],
+].filter(Boolean) as [string | number, string][];
+---
+<!doctype html>
+<html lang="en" data-theme={theme.id}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{profile.profile.name} — Showtime card</title>
+    <link rel="canonical" href={stage} />
+    <link href={themeFontsHref([theme.id])} rel="stylesheet" />
+    <style is:inline set:html={themesCss()} />
+  </head>
+  <body>
+    <a class="card" href={stage} target="_top" rel="noopener">
+      <span class="kicker">Showtime presents</span>
+      <span class="name"><span>{first}</span> <span class="accent">{rest.join(' ')}</span></span>
+      <span class="role">{profile.profile.role}</span>
+      {stats.length > 0 && (
+        <span class="stats">
+          {stats.map(([v, l]) => <span><b>{v}</b><i>{l}</i></span>)}
+        </span>
+      )}
+      <span class="cta">View the stage ↗</span>
+    </a>
+  </body>
+</html>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: transparent; }
+  .card {
+    display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 240px;
+    padding: 22px 24px; text-decoration: none;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+    font-family: var(--body); overflow: hidden;
+  }
+  .card:hover { border-color: var(--accent); }
+  .kicker, .cta, .stats i { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .kicker, .cta { color: var(--accent); }
+  .name { font-family: var(--display); text-transform: uppercase; font-size: clamp(36px, 12vw, 72px); line-height: .9; }
+  .accent { color: var(--accent); }
+  .role { font-weight: 600; font-size: 17px; }
+  .stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: auto; }
+  .stats span { display: grid; }
+  .stats b { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1; }
+  .stats i { font-style: normal; color: var(--muted); }
+</style>

@@ -21,6 +21,7 @@ const serverRoutes = () => ({
         '/api/handle': 'src/server/routes/handle.ts',
         '/login': 'src/server/routes/login.astro',
         '/account': 'src/server/routes/account.astro',
+        '/oembed': 'src/server/routes/oembed.ts',
       };
       for (const [pattern, entrypoint] of Object.entries(routes)) injectRoute({ pattern, entrypoint });
     },

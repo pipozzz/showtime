@@ -5,7 +5,7 @@ import { store } from '../lib/profiles';
 
 const samples = await store.list();
 ---
-<Layout title="Editor — Showtime" description="Build your Showtime profile visually." bare>
+<Layout title="Editor — Showtime" description="Build your Showtime profile visually." bare noindex>
   <Editor client:only="react" samples={samples} />
   <noscript><p style="padding:24px">The editor needs JavaScript. You can also edit a YAML file in <code>profiles/</code>.</p></noscript>
 </Layout>

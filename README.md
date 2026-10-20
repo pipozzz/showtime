@@ -111,6 +111,24 @@ For a full example, see [`examples/nova.yaml`](examples/nova.yaml), which shows 
 | one file | that profile, so the repo works as a personal site |
 | several files | a directory of all profiles, each at `/<handle>` |
 
+## Sharing, SEO and embeds
+
+Every profile is ready to be shared:
+
+- **A movie-poster preview image** (`/og/<handle>.png`, 1200×630). It's generated at build time, or on request in server mode, in the profile's theme colours, and it shows up on LinkedIn, X, Slack and Discord.
+- **Search metadata:**
+  - schema.org `ProfilePage` + `Person` JSON-LD (job title, `sameAs` links, skills, employer, schools, open-source repos),
+  - canonical URLs,
+  - `sitemap.xml` and `robots.txt`,
+  - `noindex` on the editor and account pages.
+- **An embeddable card** for blogs, portfolios and Notion:
+
+  ```html
+  <iframe src="https://<your-site>/<handle>/card/" width="600" height="340" style="border:0;max-width:100%" loading="lazy"></iframe>
+  ```
+
+  In server mode there's also an **oEmbed** endpoint (`/oembed?url=…`), so tools that support oEmbed can embed a profile from its URL.
+
 ## Themes
 
 Six themes ship today: **Acid**, **Blood**, **Ice**, **Paper** (light, editorial serif), **VHS** (scanlines and chromatic edges) and **Broadway** (gold marquee bulbs). You can browse them in the [theme gallery](https://pipozzz.github.io/showtime/themes) or try one in the editor.
@@ -153,7 +171,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 - [x] Instant draft from GitHub
 - [x] GitHub Pages template workflow
 - [x] Theme plugins (`src/themes/<id>`) and a theme gallery
-- [ ] Movie-poster Open Graph image per profile
+- [x] Movie-poster Open Graph image per profile, JSON-LD, sitemap, embeddable card + oEmbed
 - [ ] GitLab / Bitbucket / Gitea importers
 - [ ] Local `showtime scan` CLI for private repos
 - [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish

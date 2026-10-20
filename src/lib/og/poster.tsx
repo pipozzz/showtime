@@ -1,0 +1,92 @@
+// The social preview "movie poster" (1200×630) for a profile, rendered with satori.
+// satori supports a flexbox subset of CSS: every element with several children
+// needs display:flex, and there is no grid.
+import { totals, type Profile } from '../model';
+import { getTheme } from '../../themes';
+
+const ANTON = 'Anton, Anton Ext';
+const GROTESK = 'Space Grotesk, Space Grotesk Ext';
+const MONO = 'JetBrains Mono, JetBrains Mono Ext';
+
+const W = 1200;
+const H = 630;
+
+/** Fit the longest name line to the width (Anton ≈ 0.43em per glyph) and two lines to the height budget. */
+const nameSize = (lines: string[], roomy: boolean) => {
+  const longest = Math.max(...lines.map((l) => l.length), 4);
+  const byWidth = Math.floor((W - 120) / (longest * 0.43));
+  const byHeight = roomy ? 170 : 140;
+  return Math.max(72, Math.min(byWidth, byHeight));
+};
+
+export function ProfilePoster({ p, host }: { p: Profile; host: string }) {
+  const t = getTheme(p.theme).tokens;
+  const me = p.profile;
+  const [first, ...rest] = (me.name || 'Your Name').toUpperCase().split(' ');
+  const lines = [first, rest.join(' ')].filter(Boolean);
+  const s = totals(p);
+  const stats = [
+    s.years > 0 && [String(s.years), 'years shipping'],
+    s.all > 0 && [s.all.toLocaleString('en'), 'commits'],
+    s.clients > 0 && [String(s.clients), 'clients'],
+    s.all > 0 && [`${s.privateShare}%`, 'in private repos'],
+  ].filter(Boolean) as [string, string][];
+  const billing = (p.clients ?? []).map((c) => c.name).filter(Boolean).slice(0, 5);
+  const size = nameSize(lines, !billing.length || !stats.length);
+
+  return (
+    <div style={{ width: W, height: H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', background: t.bg, color: t.fg, padding: '44px 60px 40px', fontFamily: GROTESK, position: 'relative' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: 10, background: t.accent, display: 'flex' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 20, letterSpacing: 2, textTransform: 'uppercase' }}>
+        <span style={{ color: t.accent }}>Showtime presents</span>
+        <span style={{ color: t.muted, whiteSpace: 'nowrap' }}>{`${host}/${p.handle}`}</span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: 14, fontFamily: ANTON, fontSize: size, lineHeight: 0.92 }}>
+        {lines.map((l, i) => (
+          <span key={i} style={{ color: i === 0 ? t.fg : t.accent }}>{l}</span>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', marginTop: 14, fontSize: 32, fontWeight: 700 }}>{me.role}</div>
+
+      <div style={{ display: 'flex', flex: 1 }} />
+
+      {stats.length > 0 && (
+        <div style={{ display: 'flex', gap: 54, alignItems: 'flex-end' }}>
+          {stats.map(([v, l]) => (
+            <div key={l} style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontFamily: ANTON, fontSize: 58, lineHeight: 1, color: l === 'in private repos' ? t.accent : t.fg }}>{v}</span>
+              <span style={{ fontFamily: MONO, fontSize: 17, letterSpacing: 2, textTransform: 'uppercase', color: t.muted, marginTop: 6 }}>{l}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {billing.length > 0 && (
+        <div style={{ display: 'flex', marginTop: 20, paddingTop: 14, borderTop: `2px solid ${t.line}`, fontFamily: MONO, fontSize: 16, letterSpacing: 2, textTransform: 'uppercase', color: t.muted, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+          {`With work for  ${billing.join('  ·  ')}`}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SitePoster({ host }: { host: string }) {
+  const t = getTheme('acid').tokens;
+  return (
+    <div style={{ width: W, height: H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: t.bg, color: t.fg, padding: '56px 64px', fontFamily: GROTESK }}>
+      <div style={{ display: 'flex', fontFamily: MONO, fontSize: 22, letterSpacing: 2, textTransform: 'uppercase', color: t.accent }}>Open source · {host}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', fontFamily: ANTON, fontSize: 190, lineHeight: 0.86 }}>
+        <span>SHOW</span>
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <span>TIME</span>
+          <div style={{ width: 40, height: 40, background: t.accent, marginLeft: 10, marginBottom: 16, display: 'flex' }} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', fontSize: 34, fontWeight: 500, maxWidth: 980 }}>
+        Your developer career as a scroll story, including the work GitHub can’t show.
+      </div>
+    </div>
+  );
+}
