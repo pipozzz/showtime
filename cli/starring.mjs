@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+// starring — local helpers for your Starring profile (https://starring.dev)
+//
+//   starring scan [folders…] [options]
+//
+// Counts the commits YOU authored in local git repositories (client work, company
+// GitLab, private repos) and writes starring-activity.json. Only dates and counts are
+// written: no code, no commit messages, no repo names, no emails. Nothing is uploaded.
+import { writeFileSync } from 'node:fs';
+import { parseArgs } from 'node:util';
+import { defaultEmails, findRepos, scan } from './scan.mjs';
+
+const HELP = `starring scan [folders…] [options]
+
+Count your commits in local git repos for your Starring profile.
+Writes only dates and counts — no code, messages, repo names or emails. Nothing is uploaded.
+
+Options
+  -e, --email <addr>     your commit email (repeatable; default: git config user.email)
+      --since <date>     only commits after this date, e.g. 2015-01-01
+      --exclude <host>   skip repos hosted here (repeatable), e.g. github.com if the GitHub
+                         importer already counts your public work
+      --depth <n>        how deep to look for repos (default 6)
+  -o, --out <file>       output file (default starring-activity.json; "-" for stdout)
+      --reveal-hosts     name self-hosted servers (e.g. git.acme.com) instead of "GitLab (self-hosted)"
+  -q, --quiet            no per-repo output
+  -h, --help
+
+Then open your Starring editor → Start from → Import, and drop the file in.
+
+Example
+  npx starring-cli scan ~/work ~/clients -e me@agency.com -e me@client.com --exclude github.com`;
+
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  options: {
+    email: { type: 'string', short: 'e', multiple: true },
+    since: { type: 'string' },
+    exclude: { type: 'string', multiple: true },
+    depth: { type: 'string' },
+    out: { type: 'string', short: 'o' },
+    'reveal-hosts': { type: 'boolean' },
+    quiet: { type: 'boolean', short: 'q' },
+    help: { type: 'boolean', short: 'h' },
+  },
+});
+
+const [command, ...folders] = positionals;
+if (values.help || !command) {
+  console.log(HELP);
+  process.exit(command || values.help ? 0 : 1);
+}
+if (command !== 'scan') {
+  console.error(`Unknown command "${command}".\n\n${HELP}`);
+  process.exit(1);
+}
+
+const emails = values.email?.length ? values.email : defaultEmails();
+const roots = folders.length ? folders : ['.'];
+const toStdout = values.out === '-';
+const log = (...a) => { if (!toStdout) console.error(...a); };
+
+log(`Looking for git repos in ${roots.join(', ')} …`);
+const repos = findRepos(roots, { maxDepth: Number(values.depth ?? 6) });
+log(`Found ${repos.length} repos. Counting commits by ${emails.join(', ') || '(no email)'} …\n`);
+
+let result;
+try {
+  result = scan(repos, {
+    emails,
+    since: values.since,
+    exclude: values.exclude ?? [],
+    revealHosts: values['reveal-hosts'],
+    onRepo: values.quiet ? undefined : (repo, n, note) => log(`  ${String(n).padStart(6)}  ${repo}${note ? `  — ${note}` : ''}`),
+  });
+} catch (e) {
+  console.error(`\n✖ ${e.message}`);
+  process.exit(1);
+}
+
+const json = JSON.stringify(result, null, 2);
+if (toStdout) {
+  process.stdout.write(json + '\n');
+} else {
+  const out = values.out ?? 'starring-activity.json';
+  writeFileSync(out, json + '\n');
+  log(`\n${result.totals.commits.toLocaleString('en')} commits in ${result.totals.repos} repos`);
+  for (const y of result.years.slice(0, 8)) log(`  ${y.year}  ${'█'.repeat(Math.max(1, Math.round((y.commits / result.years.reduce((m, x) => Math.max(m, x.commits), 1)) * 30)))} ${y.commits}`);
+  for (const p of result.platforms) log(`  ${p.name}: ${p.repos} repos, ${p.commits} commits`);
+  log(`\n✓ Wrote ${out} — only dates and counts; open it to check.`);
+  log('  Next: Starring editor → Start from → Import YAML / JSON Resume / activity… and drop the file in.');
+}

@@ -1,4 +1,4 @@
-import { totals, heatmap, type Profile, type Visibility } from '../lib/model';
+import { activityGrid, totals, heatmap, type Profile, type Visibility } from '../lib/model';
 import { link } from '../lib/url';
 import './story.css';
 
@@ -23,7 +23,8 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
   const [first, ...rest] = (me.name || ' ').split(' ');
   const contributions = [...(p.contributions ?? [])].sort((a, b) => b.year - a.year);
   const latest = contributions[0];
-  const grid = latest ? heatmap(p.handle, latest.year, latest.public + latest.private) : [];
+  const real = latest ? activityGrid(p.activity, latest.year) : null;
+  const grid = latest ? real ?? heatmap(p.handle, latest.year, latest.public + latest.private) : [];
   const maxYear = Math.max(1, ...contributions.map((c) => c.public + c.private));
   const clients = (p.clients ?? []).filter((c) => c.name);
   const projects = p.projects ?? [];
@@ -157,7 +158,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
           {hasActivity && latest && (
             <>
               <h2 className="display big">{latest.year}<span className="muted"> / {n(latest.public + latest.private)} contributions</span></h2>
-              <div className="heat reveal" role="img" aria-label={`Contribution heatmap for ${latest.year}`}>
+              <div className="heat reveal" role="img" aria-label={`${real ? 'Commits per day' : 'Contribution heatmap'} for ${latest.year}`}>
                 {grid.map((v, i) => <i className={`l${v}`} key={i} />)}
               </div>
               <div className="years">

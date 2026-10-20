@@ -4,6 +4,7 @@ import { blankProfile, totals, validate, type Profile } from '../lib/model';
 import ProfileStory from '../story/ProfileStory';
 import { importGithub } from '../lib/importers/github';
 import { importJsonResume } from '../lib/importers/jsonresume';
+import { importActivity, isActivityFile } from '../lib/importers/activity';
 import { link } from '../lib/url';
 import GithubDialog from './GithubDialog';
 import { useServer, type SyncStatus } from './useServer';
@@ -213,7 +214,11 @@ export default function Editor({ samples }: Props) {
   const load = (raw: string, label: string) => {
     try {
       const data = parse(raw);
-      if (data && typeof data === 'object' && 'basics' in data) {
+      if (isActivityFile(data)) {
+        // a scan only adds counts, so it always merges into the current draft
+        const result = importActivity(data, { base: p });
+        imported(result.profile, result.notes, `${label} activity from starring scan`);
+      } else if (data && typeof data === 'object' && 'basics' in data) {
         const result = importJsonResume(data, { base: importMode === 'merge' ? p : undefined });
         imported(result.profile, result.notes, `${label} from JSON Resume`);
       } else {
@@ -294,7 +299,7 @@ export default function Editor({ samples }: Props) {
                 </button>
               ))}
               <hr />
-              <button type="button" onClick={() => { setImportOpen(true); setMenu(null); }}>Import YAML / JSON Resume…</button>
+              <button type="button" onClick={() => { setImportOpen(true); setMenu(null); }}>Import YAML / JSON Resume / scan…</button>
             </div>
           )}
         </div>
@@ -441,7 +446,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Import profile" onClick={(e) => e.target === e.currentTarget && setImportOpen(false)}>
           <form className="ed-modal-box" onSubmit={(e) => { e.preventDefault(); load(new FormData(e.currentTarget).get('yaml') as string, 'Imported'); }}>
             <h3 className="display">Import profile</h3>
-            <p className="muted">Paste a Starring profile or JSON Resume, choose a file, or drop a file anywhere on the editor. Conversion stays in this browser.</p>
+            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, choose a file, or drop it anywhere on the editor. Conversion stays in this browser.</p>
             <div className="ed-seg" role="radiogroup" aria-label="JSON Resume import mode">
               <label className={importMode === 'fresh' ? 'on' : ''}>
                 <input type="radio" name="resume-mode" checked={importMode === 'fresh'} onChange={() => setImportMode('fresh')} />Start fresh
@@ -463,7 +468,7 @@ export default function Editor({ samples }: Props) {
       )}
       <input ref={fileInput} type="file" accept=".yaml,.yml,.json" hidden onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
 
-      {dropping && <div className="ed-drop display">Drop your YAML or JSON Resume</div>}
+      {dropping && <div className="ed-drop display">Drop your YAML, JSON Resume or scan</div>}
 
       {toast && (
         <div className="ed-toast mono" role="status" key={toast.id}>

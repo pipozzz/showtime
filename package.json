@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "new:theme": "node scripts/new-theme.mjs",
-    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test": "node --import tsx --test \"src/**/*.test.ts\" \"cli/*.test.mjs\"",
     "dev:server": "STARRING_MODE=server astro dev",
     "build:server": "STARRING_MODE=server astro build",
     "start": "node scripts/migrate.mjs && node dist/server/entry.mjs",

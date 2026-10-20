@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HANDLE, RESERVED, THIS_YEAR, blankProfile, heatmap, totals, validate, type Profile } from './model';
+import { HANDLE, RESERVED, THIS_YEAR, activityGrid, blankProfile, heatmap, totals, validate, type Profile } from './model';
 
 const valid = (): Profile => ({
   ...blankProfile(),
@@ -60,4 +60,14 @@ test('heatmap is deterministic, 53×7, levels 0–4, empty for zero', () => {
   assert.deepEqual(a, heatmap('jane', 2025, 1200));
   assert.ok(a.every((v) => v >= 0 && v <= 4));
   assert.ok(heatmap('jane', 2025, 0).every((v) => v === 0));
+});
+
+test('activityGrid places real days by weekday and quantises into 4 levels', () => {
+  // 2025-01-01 is a Wednesday → 3 empty cells before it
+  const activity = { '2025-01-01': 1, '2025-01-02': 2, '2025-01-03': 3, '2025-01-04': 10, '2024-12-31': 99 };
+  const g = activityGrid(activity, 2025)!;
+  assert.equal(g.length, 53 * 7);
+  assert.deepEqual(g.slice(0, 7), [0, 0, 0, 1, 2, 3, 4]);
+  assert.equal(activityGrid(activity, 2023), null);
+  assert.equal(activityGrid(undefined, 2025), null);
 });

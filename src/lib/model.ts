@@ -48,6 +48,8 @@ export interface Profile {
   projects?: Project[];
   education?: Education[];
   skills?: Record<string, string[]>;
+  /** Commits per day ('YYYY-MM-DD' → n) from `starring scan` or an importer; drives the real heatmap. */
+  activity?: Record<string, number>;
 }
 
 
@@ -99,6 +101,12 @@ export const validate = (p: Profile): Issues => {
   });
   p.clients?.forEach((c, i) => req(`clients.${i}.name`, c.name));
   p.education?.forEach((e, i) => req(`education.${i}.school`, e.school));
+  if (p.activity) {
+    const days = Object.entries(p.activity);
+    if (days.length > 40 * 366 || days.some(([d, n]) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || !Number.isInteger(n) || n < 0)) {
+      out.activity = 'Activity must map YYYY-MM-DD dates to commit counts';
+    }
+  }
   return out;
 };
 
@@ -122,8 +130,30 @@ export const totals = (p: Profile) => {
 };
 
 /**
+ * Real heatmap for `year` from daily counts: 53 week-columns × 7 days (Sun–Sat),
+ * levels 0–4 by quartile of active days, like GitHub's. Returns null when there's
+ * no activity that year.
+ */
+export const activityGrid = (activity: Record<string, number> | undefined, year: number): number[] | null => {
+  if (!activity) return null;
+  const counts: number[] = [];
+  const start = new Date(Date.UTC(year, 0, 1));
+  const offset = start.getUTCDay(); // empty cells before Jan 1 in the first week
+  for (let d = new Date(start); d.getUTCFullYear() === year; d.setUTCDate(d.getUTCDate() + 1)) {
+    counts.push(activity[d.toISOString().slice(0, 10)] ?? 0);
+  }
+  const active = counts.filter((n) => n > 0).sort((a, b) => a - b);
+  if (!active.length) return null;
+  const q = (f: number) => active[Math.floor((active.length - 1) * f)];
+  const [q1, q2, q3] = [q(0.25), q(0.5), q(0.75)];
+  const level = (n: number) => (n === 0 ? 0 : n <= q1 ? 1 : n <= q2 ? 2 : n <= q3 ? 3 : 4);
+  const cells = [...Array(offset).fill(0), ...counts.map(level)];
+  return [...cells, ...Array(Math.max(0, 53 * 7 - cells.length)).fill(0)].slice(0, 53 * 7);
+};
+
+/**
  * Turn a yearly total into a 53x7 heatmap. Deterministic per (handle, year)
- * so builds are stable. Real importers will replace this with daily data.
+ * so builds are stable. Used when there's no daily activity (see activityGrid).
  */
 export const heatmap = (handle: string, year: number, total: number): number[] => {
   let seed = [...`${handle}${year}`].reduce((s, ch) => (s * 31 + ch.charCodeAt(0)) >>> 0, 7);

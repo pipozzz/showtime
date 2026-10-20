@@ -159,10 +159,17 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 - With an optional `read:user` token, it also imports exact contributions per year, including the private count GitHub reports when *Include private contributions* is on. The token is never stored.
 - **Merge into current** refreshes GitHub data and keeps your clients, timeline and NDA work.
 
-**Planned:**
-- GitLab, including self-hosted, Bitbucket and Gitea.
-- JSON Resume.
-- `npx starring scan ~/work`, a local CLI that counts *your* commits in private repos and keeps only dates and counts. Code, messages and repo names never leave your machine.
+**Private work, `starring scan`** ([`cli/`](cli/README.md)): this is the part GitHub can't show.
+
+```bash
+npx starring-cli scan ~/work ~/clients -e me@agency.com --exclude github.com
+```
+
+It counts *your* commits in local repos, including client work and a self-hosted GitLab, de-duplicated across clones. It writes only dates and counts to `starring-activity.json`: no code, messages, repo names or emails, and nothing is uploaded. Drop the file into the editor's import, and your private commits per year, platforms and a **real commits-per-day heatmap** show up on your stage.
+
+**JSON Resume:** paste or drop a `resume.json` into the import dialog to fill your timeline, education, skills and projects. Contributed by @dailyun.
+
+**Planned:** GitLab (including self-hosted), Bitbucket and Gitea importers.
 
 ## Roadmap
 
@@ -173,7 +180,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 - [x] Theme plugins (`src/themes/<id>`) and a theme gallery
 - [x] Movie-poster Open Graph image per profile, JSON-LD, sitemap, embeddable card + oEmbed
 - [ ] GitLab / Bitbucket / Gitea importers
-- [ ] Local `starring scan` CLI for private repos
+- [x] Local `starring scan` CLI for private repos, with a real heatmap
 - [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish
 
 ### Architecture
