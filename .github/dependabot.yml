@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule: { interval: weekly, day: monday }
     open-pull-requests-limit: 5
+    ignore:
+      # Types must match the runtime (Node 22) — bump together with the Node upgrade.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # TypeScript 7 (native compiler) isn't supported by @astrojs/check yet.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
       astro:
         patterns: ['astro', '@astrojs/*']
@@ -14,6 +21,13 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
+    groups:
+      actions:
+        patterns: ['*']
   - package-ecosystem: docker
     directory: /
     schedule: { interval: monthly }
+    ignore:
+      # Node majors move CI, Docker and engines together, on LTS — done by hand.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
