@@ -5,6 +5,7 @@ import ProfileStory from '../story/ProfileStory';
 import { importGithub } from '../lib/importers/github';
 import { link } from '../lib/url';
 import GithubDialog from './GithubDialog';
+import { useServer, type SyncStatus } from './useServer';
 import { getTheme, hasTheme } from '../themes';
 import {
   ClientsSection, EducationSection, ExperienceSection, NumbersSection, PlatformsSection,
@@ -26,6 +27,14 @@ const SECTIONS: { id: string; label: string; short: string; act: string; C: (p: 
 ];
 
 const DEVICES = { desktop: 1280, tablet: 820, phone: 390 } as const;
+
+const SYNC_LABEL: Record<SyncStatus, string> = {
+  off: '', loading: 'Connecting…', anon: '', unclaimed: 'Not saved — claim a handle', saved: 'Saved', saving: 'Saving…',
+  invalid: 'Fix highlighted fields to save', error: 'Save failed — retrying on next edit',
+};
+const SYNC_CLASS: Record<SyncStatus, string> = {
+  off: '', loading: 'saving', anon: '', unclaimed: 'off', saved: 'saved', saving: 'saving', invalid: 'off', error: 'off',
+};
 type Device = keyof typeof DEVICES;
 
 // ---------- helpers ----------
@@ -82,6 +91,8 @@ function useHistory(initial: Profile) {
 interface Props { samples: Profile[] }
 
 export default function Editor({ samples }: Props) {
+  // opened with ?from / ?github / ?new: keep that draft even when signed in (it gets saved over the stored one)
+  const keepLocal = useMemo(() => /[?&](from|github|new)\b/.test(location.search), []);
   const initial = useMemo<{ p: Profile; source: string }>(() => {
     const q = new URLSearchParams(location.search);
     const from = q.get('from');
@@ -105,6 +116,7 @@ export default function Editor({ samples }: Props) {
   }, [samples]);
 
   const { p, commit, undo, redo, canUndo, canRedo } = useHistory(initial.p);
+  const server = useServer(p, (remote) => commit(normalize(remote)), keepLocal);
   const [active, setActive] = useState('profile');
   const [device, setDevice] = useState<Device>('desktop');
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
@@ -277,9 +289,15 @@ export default function Editor({ samples }: Props) {
             </div>
           )}
         </div>
-        <span className={`ed-status mono ${saved}`} title="Drafts live in this browser only">
-          {saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Draft saved' : 'Not saved (storage blocked)'}
-        </span>
+        {server.hosted && server.status !== 'anon' ? (
+          <span className={`ed-status mono ${SYNC_CLASS[server.status]}`} title={server.error || 'Your profile on this Showtime instance'}>
+            {SYNC_LABEL[server.status]}
+          </span>
+        ) : (
+          <span className={`ed-status mono ${saved}`} title="Drafts live in this browser only">
+            {saved === 'saving' ? 'Saving…' : saved === 'saved' ? 'Draft saved locally' : 'Not saved (storage blocked)'}
+          </span>
+        )}
 
         <div className="ed-top-mid">
           <div className="ed-seg small ed-devices" role="radiogroup" aria-label="Preview device">
@@ -299,7 +317,42 @@ export default function Editor({ samples }: Props) {
           <button type="button" className="ed-icon" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)" aria-label="Undo">↶</button>
           <button type="button" className="ed-icon" onClick={redo} disabled={!canRedo} title="Redo (⇧⌘Z)" aria-label="Redo">↷</button>
           <button type="button" className="ed-btn ghost hide-sm" onClick={copy}>Copy YAML</button>
-          <button type="button" className="ed-btn" onClick={download} title="⌘S">Export .yaml</button>
+          {server.hosted && server.status === 'anon' && (
+            <a className="ed-btn" href={`${link('login')}?next=${encodeURIComponent(link('edit'))}`}>Sign in to save</a>
+          )}
+          {server.hosted && server.status === 'unclaimed' && (
+            <button
+              type="button"
+              className="ed-btn"
+              onClick={async () => {
+                const r = await server.claim();
+                if (r.ok) notify(`/${r.handle} is yours — autosave is on`);
+                else { pick('profile'); notify(r.error); }
+              }}
+            >
+              Claim /{p.handle}
+            </button>
+          )}
+          {server.own && (
+            <>
+              <button
+                type="button"
+                className={`ed-btn${server.own.published ? ' ghost' : ''}`}
+                onClick={async () => {
+                  const r = await server.publish(!server.own!.published);
+                  notify(r.ok ? (server.own!.published ? 'Unpublished — only you can see it' : `Live at /${server.own!.handle}`) : r.error);
+                }}
+                title={server.own.published ? 'Click to unpublish' : 'Make your stage public'}
+              >
+                {server.own.published ? '● Live' : 'Publish'}
+              </button>
+              <a className="ed-icon ed-avatar" href={link('account')} title={server.me?.user?.email ?? 'Account'} aria-label="Account">
+                {(server.me?.user?.name || server.me?.user?.email || '?').slice(0, 1).toUpperCase()}
+              </a>
+            </>
+          )}
+          {!server.hosted && <button type="button" className="ed-btn" onClick={download} title="⌘S">Export .yaml</button>}
+          {server.hosted && <button type="button" className="ed-btn ghost hide-sm" onClick={download} title="⌘S">.yaml</button>}
         </div>
       </header>
 

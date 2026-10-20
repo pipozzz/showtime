@@ -5,7 +5,7 @@ import { THEMES } from '../themes';
 import { store } from '../lib/profiles';
 import { link } from '../lib/url';
 
-const sample = store.list()[0];
+const sample = (await store.list())[0];
 const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
 ---
 <Layout title="Themes — Showtime" description="Every Showtime theme, made by the community.">

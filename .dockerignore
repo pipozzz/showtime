@@ -1,0 +1,11 @@
+node_modules
+dist
+.astro
+.git
+.github
+.claude
+docs
+*.log
+.env
+.env.*
+!.env.example

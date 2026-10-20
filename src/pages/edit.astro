@@ -3,7 +3,7 @@ import Layout from '../components/Layout.astro';
 import Editor from '../editor/Editor';
 import { store } from '../lib/profiles';
 
-const samples = store.list();
+const samples = await store.list();
 ---
 <Layout title="Editor — Showtime" description="Build your Showtime profile visually." bare>
   <Editor client:only="react" samples={samples} />

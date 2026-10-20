@@ -1,0 +1,96 @@
+---
+import Layout from '../../components/Layout.astro';
+import { getSession } from '../auth';
+import { getByUser } from '../profiles';
+import { link } from '../../lib/url';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+if (!session) return Astro.redirect(`${link('login')}?next=${encodeURIComponent(link('account'))}`);
+const own = await getByUser(session.user.id);
+---
+<Layout title="Account — Showtime" fonts={['acid']}>
+  <main class="acct">
+    <a class="mono accent back" href={link()}>← Showtime</a>
+    <h1 class="display">Your<br /><span class="accent">stage.</span></h1>
+
+    <section class="card">
+      <p class="mono muted">Signed in as</p>
+      <p class="big">{session.user.email}</p>
+    </section>
+
+    <section class="card">
+      <p class="mono muted">Profile</p>
+      {own ? (
+        <>
+          <p class="big">/{own.handle} <span class={`tag ${own.published ? 'solid' : ''}`}>{own.published ? 'Published' : 'Draft'}</span></p>
+          <p class="muted">Last saved {new Date(own.updatedAt).toLocaleString('en')}</p>
+          <div class="row">
+            <a class="btn" href={link('edit')}>Open editor</a>
+            {own.published && <a class="btn ghost" href={link(own.handle)}>View live page ↗</a>}
+          </div>
+        </>
+      ) : (
+        <>
+          <p>You haven’t claimed a handle yet.</p>
+          <div class="row"><a class="btn" href={link('edit')}>Build your stage →</a></div>
+        </>
+      )}
+    </section>
+
+    <section class="card">
+      <p class="mono muted">Session</p>
+      <div class="row">
+        <button class="btn ghost" id="signout" type="button">Sign out</button>
+      </div>
+    </section>
+
+    <section class="card danger">
+      <p class="mono muted">Danger zone</p>
+      <p>Deleting your account removes your profile and everything stored about you on this instance. This can’t be undone.</p>
+      <div class="row">
+        <button class="btn ghost" id="delete" type="button">Delete account</button>
+      </div>
+      <p class="error" role="alert" hidden></p>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  const post = (path: string, body: object = {}) =>
+    fetch(`/api/auth/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'same-origin' });
+  const home = document.querySelector<HTMLAnchorElement>('.back')!.href;
+
+  document.getElementById('signout')!.addEventListener('click', async () => {
+    await post('sign-out');
+    location.assign(home);
+  });
+
+  document.getElementById('delete')!.addEventListener('click', async () => {
+    const err = document.querySelector<HTMLElement>('.danger .error')!;
+    if (!confirm('Delete your account and profile permanently?')) return;
+    const res = await post('delete-user', { callbackURL: home });
+    if (res.ok) return location.assign(home);
+    const data = await res.json().catch(() => ({}));
+    err.textContent = data.message || 'Could not delete the account. Sign in again and retry.';
+    err.hidden = false;
+  });
+</script>
+
+<style>
+  .acct { max-width: 680px; margin: 0 auto; padding: 10vh var(--gutter); display: grid; gap: 20px; }
+  .back { text-decoration: none; }
+  h1 { font-size: clamp(64px, 12vw, 120px); margin-bottom: 12px; }
+  .card { border: 1px solid var(--line); padding: 22px; display: grid; gap: 10px; }
+  .big { font-size: 22px; font-weight: 500; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; overflow-wrap: anywhere; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .btn {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; font-size: 13px;
+    padding: 13px 18px; border: 0; cursor: pointer; background: var(--accent); color: var(--accent-ink); text-decoration: none;
+  }
+  .btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+  .danger { border-color: #5a1d18; }
+  .danger .btn.ghost { color: #ff6b5e; box-shadow: inset 0 0 0 1px #5a1d18; }
+  .error { color: #ff6b5e; }
+</style>

@@ -1,18 +1,26 @@
 ---
 import Layout from '../components/Layout.astro';
 import ProfileStory from '../story/ProfileStory';
-import { store, type Profile } from '../lib/profiles';
+import { SERVER_MODE, store, type Profile } from '../lib/profiles';
 import { link } from '../lib/url';
 
-export function getStaticPaths() {
-  return store.list().map((p) => ({ params: { handle: p.handle }, props: { p } }));
+// Static mode: one page per YAML profile at build time.
+// Server mode: rendered on request, so new and edited DB profiles show up instantly.
+export async function getStaticPaths() {
+  return (await store.list()).map((p) => ({ params: { handle: p.handle }, props: { p } }));
 }
 
-const { p } = Astro.props as { p: Profile };
+let p = (Astro.props as { p?: Profile }).p;
+if (SERVER_MODE) {
+  p = await store.get(Astro.params.handle!);
+  if (!p) return new Response(null, { status: 404, statusText: 'No such stage' });
+  Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+}
+const profile = p!;
 ---
-<Layout title={`${p.profile.name} — Showtime`} description={p.profile.tagline} theme={p.theme} fonts={[p.theme]}>
-  <ProfileStory p={p} />
-  <a class="edit-fab mono" href={link(`edit?from=${p.handle}`)}>Edit in Showtime ✎</a>
+<Layout title={`${profile.profile.name} — Showtime`} description={profile.profile.tagline} theme={profile.theme} fonts={[profile.theme]}>
+  <ProfileStory p={profile} />
+  <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Showtime ✎</a>
 </Layout>
 
 <style>

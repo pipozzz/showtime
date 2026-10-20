@@ -61,6 +61,19 @@ Most working developers' best code sits in private repos: client projects, the a
 
 The Pages workflow reads the correct `site` and `base` from GitHub, so project pages, user pages and custom domains all work without editing config.
 
+## Self-host it with accounts
+
+Want a Showtime instance where people **sign up, claim a handle and publish** without touching git? Run it in server mode with Postgres:
+
+```bash
+cp .env.example .env   # set BETTER_AUTH_URL, BETTER_AUTH_SECRET, POSTGRES_PASSWORD
+docker compose up -d
+```
+
+You get email + password sign-up (GitHub and GitLab sign-in optional), autosave to the database, publish and unpublish, account deletion, and an `ALLOW_SIGNUP=false` switch for private instances. The editor and the scroll story are the same as in static mode.
+
+For Dokploy, plain Node and all the settings, see **[docs/self-hosting.md](docs/self-hosting.md)**.
+
 ## Run it locally
 
 ```bash
@@ -143,7 +156,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 - [ ] Movie-poster Open Graph image per profile
 - [ ] GitLab / Bitbucket / Gitea importers
 - [ ] Local `showtime scan` CLI for private repos
-- [ ] Hosted mode: sign in with GitHub or GitLab, claim a handle, save to Postgres
+- [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish
 
 ### Architecture
 
@@ -153,7 +166,7 @@ The pages read profiles only through a `ProfileStore` interface (`src/lib/profil
 YAML files ─┐   ┌──────────────┐   ┌─► /<handle>   scroll story (static HTML)
             ├──►│ ProfileStore │───┤
 Postgres  ──┘   └──────────────┘   └─► /            home: demo · personal · directory
-(planned)            ▲
+(server mode)        ▲
                      │ same Profile model (src/lib/model.ts)
                 /edit visual editor ── importers (GitHub, …)
 ```

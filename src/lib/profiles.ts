@@ -6,15 +6,18 @@ import { THEMES, hasTheme } from '../themes';
 
 export * from './model';
 
+export type StoreMode = 'demo' | 'personal' | 'directory';
+
 /**
- * Where profiles come from. Today: YAML files (single-user or self-hosted
- * mode). Later: a database behind registration — same shape.
+ * Where profiles come from.
+ * - static mode: YAML files in profiles/ (falling back to examples/)
+ * - server mode: those YAML files + published profiles from Postgres
  */
 export interface ProfileStore {
-  /** demo = no profiles/ yet, showing examples/; personal = exactly one profile */
-  mode: 'demo' | 'personal' | 'directory';
-  list(): Profile[];
-  get(handle: string): Profile | undefined;
+  /** demo = showing examples/; personal = exactly one profile, shown as the home page */
+  mode(): Promise<StoreMode>;
+  list(): Promise<Profile[]>;
+  get(handle: string): Promise<Profile | undefined>;
 }
 
 const readDir = (dir: string): Profile[] =>
@@ -33,20 +36,44 @@ const readDir = (dir: string): Profile[] =>
         })
         .sort((a, b) => a.handle.localeCompare(b.handle));
 
+const PROFILES_DIR = path.resolve('profiles');
+const EXAMPLES_DIR = path.resolve('examples');
+
 // Files are re-read on every call so `astro dev` picks up new YAML without a restart.
-export const yamlStore = (dir = path.resolve('profiles'), examples = path.resolve('examples')): ProfileStore => {
+export const yamlStore = (dir = PROFILES_DIR, examples = EXAMPLES_DIR): ProfileStore => {
   const load = () => {
     const own = readDir(dir);
-    return { own, list: own.length ? own : readDir(examples) };
+    return own.length ? own : readDir(examples);
   };
   return {
-    get mode() {
+    mode: async () => {
       const n = readDir(dir).length;
       return n === 0 ? 'demo' : n === 1 ? 'personal' : 'directory';
     },
-    list: () => load().list,
-    get: (handle) => load().list.find((p) => p.handle === handle),
+    list: async () => load(),
+    get: async (handle) => load().find((p) => p.handle === handle),
   };
 };
 
-export const store = yamlStore();
+/** Handles taken by files — DB users can't claim these. */
+export const fileHandles = () => [...readDir(PROFILES_DIR), ...readDir(EXAMPLES_DIR)].map((p) => p.handle);
+
+const hybridStore = (): ProfileStore => {
+  const db = () => import('../server/profiles');
+  const files = () => readDir(PROFILES_DIR);
+  const all = async () => {
+    const published = await (await db()).listPublished();
+    const merged = [...files(), ...published];
+    // a fresh instance still shows something: the examples, until real profiles exist
+    return (merged.length ? merged : readDir(EXAMPLES_DIR)).sort((a, b) => a.handle.localeCompare(b.handle));
+  };
+  return {
+    mode: async () => (files().length || (await (await db()).listPublished()).length ? 'directory' : 'demo'),
+    list: all,
+    get: async (handle) => files().find((p) => p.handle === handle) ?? (await (await db()).getPublished(handle)) ?? readDir(EXAMPLES_DIR).find((p) => p.handle === handle),
+  };
+};
+
+export const SERVER_MODE = import.meta.env.SHOWTIME_MODE === 'server';
+
+export const store: ProfileStore = SERVER_MODE ? hybridStore() : yamlStore();

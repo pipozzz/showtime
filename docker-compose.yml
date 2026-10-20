@@ -1,0 +1,39 @@
+# Self-hosted Showtime: app + Postgres.
+#   cp .env.example .env   # set BETTER_AUTH_SECRET and BETTER_AUTH_URL
+#   docker compose up -d
+services:
+  app:
+    build: .
+    image: showtime:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://showtime:${POSTGRES_PASSWORD:-showtime}@db:5432/showtime
+      # the app always listens on 4321 inside the container; PORT in .env is the host port
+      PORT: "4321"
+    ports:
+      - "${PORT:-4321}:4321"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # optional: profiles kept as YAML files alongside DB profiles
+      - ./profiles:/app/profiles:ro
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: showtime
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-showtime}
+      POSTGRES_DB: showtime
+    volumes:
+      - showtime-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U showtime"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  showtime-db:

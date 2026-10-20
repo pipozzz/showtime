@@ -1,12 +1,17 @@
 ---
 import Layout from '../components/Layout.astro';
 import ProfileStory from '../story/ProfileStory';
-import { store, totals } from '../lib/profiles';
+import { SERVER_MODE, store, totals } from '../lib/profiles';
 import { link } from '../lib/url';
 
-const profiles = store.list();
+const profiles = await store.list();
 // Personal site: one profile in profiles/ → it is the home page.
-const me = store.mode === 'personal' ? profiles[0] : undefined;
+const me = (await store.mode()) === 'personal' ? profiles[0] : undefined;
+let signedIn = false;
+if (SERVER_MODE) {
+  const { getSession } = await import('../server/auth');
+  signedIn = !!(await getSession(Astro.request));
+}
 ---
 {me ? (
 <Layout title={`${me.profile.name} — Showtime`} description={me.profile.tagline} theme={me.theme} fonts={[me.theme]}>
@@ -14,6 +19,13 @@ const me = store.mode === 'personal' ? profiles[0] : undefined;
 </Layout>
 ) : (
 <Layout title="Showtime" description="Your developer career as a scroll story — including the work GitHub can't show.">
+  {SERVER_MODE && (
+    <nav class="top mono">
+      {signedIn
+        ? <><a href={link('edit')}>Editor</a><a href={link('account')}>Account</a></>
+        : <><a href={link('login')}>Sign in</a><a class="accent" href={`${link('login')}?mode=signup`}>Create account</a></>}
+    </nav>
+  )}
   <header class="landing">
     <p class="mono accent">Open source · v0.1 prototype</p>
     <h1 class="display">Show<br />time<span class="accent">.</span></h1>
@@ -70,9 +82,27 @@ const me = store.mode === 'personal' ? profiles[0] : undefined;
 )}
 
 <style>
-  .landing { min-height: 100svh; padding: 10vh var(--gutter); display: grid; align-content: center; gap: 32px; }
-  .landing h1 { font-size: clamp(88px, 15vw, 260px); }
-  .pitch { font-size: clamp(20px, 2.2vw, 30px); max-width: 38ch; font-weight: 500; }
+  .top { position: absolute; top: 20px; right: var(--gutter); display: flex; gap: 20px; z-index: 5; }
+  .top a { text-decoration: none; }
+  .landing { min-height: 100svh; padding: max(48px, 8svh) var(--gutter); display: grid; align-content: center; gap: clamp(18px, 3.5svh, 32px); }
+  /* sized by width AND height, so short laptop screens still show the form above the fold */
+  .landing h1 { font-size: clamp(72px, min(15vw, 26svh), 260px); }
+  .pitch { font-size: clamp(18px, min(2.2vw, 3.6svh), 30px); max-width: 38ch; font-weight: 500; }
+  /* wide screens: title left, pitch + form right */
+  @media (min-width: 960px) {
+    .landing {
+      grid-template-columns: auto minmax(340px, 600px);
+      grid-template-areas: 'kicker kicker' 'title pitch' 'title form' 'title cta';
+      column-gap: clamp(32px, 5vw, 96px);
+      align-items: end;
+      justify-content: start;
+    }
+    .landing > .mono { grid-area: kicker; }
+    .landing h1 { grid-area: title; align-self: center; font-size: clamp(72px, min(13vw, 34svh), 300px); }
+    .landing .pitch { grid-area: pitch; }
+    .landing .gh-form { grid-area: form; }
+    .landing .cta { grid-area: cta; }
+  }
   .cta { display: flex; gap: 16px; flex-wrap: wrap; }
   .gh-form { display: grid; gap: 10px; max-width: 720px; }
   .gh-form label { color: var(--accent); }

@@ -20,3 +20,5 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /showtime
+      # Server mode (accounts + Postgres) must build too; no DB needed to build.
+      - run: npm run build:server
