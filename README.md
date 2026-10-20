@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://pipozzz.github.io/starring/"><b>Live demo</b></a> ·
-  <a href="https://pipozzz.github.io/starring/edit"><b>Try the editor</b></a> ·
+  <a href="https://starring.dev/"><b>Live demo</b></a> ·
+  <a href="https://starring.dev/edit/"><b>Try the editor</b></a> ·
   <a href="https://github.com/pipozzz/starring/generate"><b>Use this template</b></a> ·
   <a href="#your-own-starring-site-in-5-minutes">5-minute setup</a> ·
   <a href="#contributing">Contribute</a>
@@ -34,7 +34,7 @@ Most working developers' best code sits in private repos: client projects, the a
   </tr>
 </table>
 
-> **Try it now:** open the [live demo](https://pipozzz.github.io/starring/) and type your GitHub username, or browse the sample profiles [Nova](https://pipozzz.github.io/starring/nova/) and [Milo](https://pipozzz.github.io/starring/milo/). Nothing is stored on a server.
+> **Try it now:** open the [live demo](https://starring.dev/) and type your GitHub username, or browse the sample profiles [Nova](https://starring.dev/nova/) and [Milo](https://starring.dev/milo/). Nothing is stored on a server.
 
 ## What you get
 
@@ -53,7 +53,7 @@ Most working developers' best code sits in private repos: client projects, the a
 ## Your own Starring site in 5 minutes
 
 1. Click **[Use this template](https://github.com/pipozzz/starring/generate)** to create your own repo.
-2. Open the editor: use the [hosted one](https://pipozzz.github.io/starring/edit), or run it locally with `npm install && npm run dev` and open **`/edit`**.
+2. Open the editor: use the [hosted one](https://starring.dev/edit/), or run it locally with `npm install && npm run dev` and open **`/edit`**.
 3. Choose **Start from → GitHub profile** to get an instant draft. Then add the parts GitHub can't see: clients, NDA projects, your timeline, school.
 4. Press **Export .yaml** (⌘S) and save the file as **`profiles/<your-handle>.yaml`**. With exactly one file in `profiles/`, your profile becomes the home page.
 5. In your repo, open **Settings → Pages → Build and deployment** and set **Source: GitHub Actions**.
@@ -131,7 +131,7 @@ Every profile is ready to be shared:
 
 ## Themes
 
-Six themes ship today: **Acid**, **Blood**, **Ice**, **Paper** (light, editorial serif), **VHS** (scanlines and chromatic edges) and **Broadway** (gold marquee bulbs). You can browse them in the [theme gallery](https://pipozzz.github.io/starring/themes) or try one in the editor.
+Six themes ship today: **Acid**, **Blood**, **Ice**, **Paper** (light, editorial serif), **VHS** (scanlines and chromatic edges) and **Broadway** (gold marquee bulbs). You can browse them in the [theme gallery](https://starring.dev/themes/) or try one in the editor.
 
 <p align="center"><img src="docs/screenshots/themes.png" alt="Theme gallery: Broadway with marquee bulbs, Ice, Paper in italic serif, and VHS with scanlines" width="100%" /></p>
 

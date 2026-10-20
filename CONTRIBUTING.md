@@ -80,7 +80,7 @@ Then add it to the editor's *Start from* menu.
 
 ### Add a theme
 
-This is the easiest way to contribute, and every theme shows up in the [gallery](https://pipozzz.github.io/starring/themes) with your name on it.
+This is the easiest way to contribute, and every theme shows up in the [gallery](https://starring.dev/themes/) with your name on it.
 
 ```bash
 npm run new:theme -- noir "Film Noir"
