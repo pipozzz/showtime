@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ site, url }) => {
   const profiles = await store.list();
   const pages = [
     { loc: abs(''), priority: '1.0' },
-    ...(mode === 'personal' ? [] : [{ loc: abs('themes'), priority: '0.5' }]),
+    ...(mode === 'personal' ? [] : [{ loc: abs('explore'), priority: '0.7' }, { loc: abs('themes'), priority: '0.5' }]),
     ...profiles.map((p) => ({ loc: abs(p.handle), priority: '0.8' })),
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

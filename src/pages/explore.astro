@@ -1,0 +1,166 @@
+---
+// Directory of every published stage, filterable in the browser (works on static hosts too).
+// Filters live in the URL (?q=&skill=&loc=&available=1) so searches can be shared.
+import Layout from '../components/Layout.astro';
+import { SERVER_MODE, store, totals } from '../lib/profiles';
+import { link, pageLink } from '../lib/url';
+import { getTheme } from '../themes';
+
+if (SERVER_MODE) Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+
+const profiles = (await store.list()).map((p) => {
+  const t = totals(p);
+  const skills = [...new Set(Object.values(p.skills ?? {}).flat())];
+  const location = p.profile.location ?? '';
+  return {
+    p,
+    t,
+    skills,
+    location,
+    theme: getTheme(p.theme).id,
+    search: [p.profile.name, p.profile.role, p.profile.tagline, location, ...skills, ...(p.clients ?? []).filter((c) => !c.nda).map((c) => c.name)]
+      .join(' ')
+      .toLowerCase(),
+  };
+});
+// Most common skills first → quick filter chips
+const counts = new Map<string, number>();
+profiles.forEach((x) => x.skills.forEach((s) => counts.set(s, (counts.get(s) ?? 0) + 1)));
+const topSkills = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 14).map(([s]) => s);
+const locations = [...new Set(profiles.map((x) => x.location.split(',').pop()!.trim()).filter(Boolean))].sort();
+const n = (v: number) => v.toLocaleString('en');
+---
+<Layout title="Explore developers — Starring" description={`${profiles.length} developer careers as scroll stories — search by role, skill, location and availability.`}>
+  <main class="ex">
+    <header class="ex-head">
+      <a class="mono accent back" href={link()}>← Starring</a>
+      <h1 class="display">Now<br /><span class="accent">playing.</span></h1>
+      <p class="mono muted"><span data-shown>{profiles.length}</span> of {profiles.length} stages</p>
+    </header>
+
+    <form class="filters" role="search" onsubmit="return false">
+      <input class="q" name="q" type="search" placeholder="Search name, role, skill, client…" autocomplete="off" />
+      <label class="avail"><input type="checkbox" name="available" /> <span>Available for work</span></label>
+      {locations.length > 1 && (
+        <select name="loc" aria-label="Location">
+          <option value="">Anywhere</option>
+          {locations.map((l) => <option value={l.toLowerCase()}>{l}</option>)}
+        </select>
+      )}
+      {topSkills.length > 0 && (
+        <div class="chips" role="group" aria-label="Skill">
+          {topSkills.map((s) => <button type="button" class="chip" data-skill={s.toLowerCase()} aria-pressed="false">{s}</button>)}
+        </div>
+      )}
+    </form>
+
+    <ul class="grid">
+      {profiles.map(({ p, t, skills, location, theme, search }) => (
+        <li
+          data-theme={theme}
+          class="card"
+          data-search={search}
+          data-skills={skills.map((s) => s.toLowerCase()).join('|')}
+          data-loc={location.toLowerCase()}
+          data-available={p.profile.available ? '1' : ''}
+        >
+          <a href={pageLink(p.handle)}>
+            <span class="row mono">
+              <span class="muted">/{p.handle}</span>
+              {p.profile.available && <span class="tag solid">Available</span>}
+            </span>
+            <span class="display name">{p.profile.name}</span>
+            <span class="role">{p.profile.role}</span>
+            {location && <span class="mono muted">{location}</span>}
+            {t.all > 0 && (
+              <span class="stats mono">
+                {t.years > 0 && <span><b class="display">{t.years}</b> yrs</span>}
+                <span><b class="display">{n(t.all)}</b> commits</span>
+                <span><b class="display accent">{t.privateShare}%</b> private</span>
+              </span>
+            )}
+            {skills.length > 0 && <span class="skills">{skills.slice(0, 5).map((s) => <span class="tag">{s}</span>)}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+    <p class="empty muted" hidden>No stages match — try fewer filters.</p>
+  </main>
+</Layout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('.filters')!;
+  const cards = [...document.querySelectorAll<HTMLElement>('.card')];
+  const chips = [...form.querySelectorAll<HTMLButtonElement>('.chip')];
+  const q = form.querySelector<HTMLInputElement>('.q')!;
+  const avail = form.querySelector<HTMLInputElement>('[name=available]')!;
+  const loc = form.querySelector<HTMLSelectElement>('[name=loc]');
+  const count = document.querySelector("[data-shown]")!;
+  const empty = document.querySelector<HTMLElement>('.empty')!;
+
+  // restore from the URL
+  const url = new URL(location.href);
+  q.value = url.searchParams.get('q') ?? '';
+  avail.checked = url.searchParams.get('available') === '1';
+  if (loc) loc.value = url.searchParams.get('loc') ?? '';
+  const picked = new Set((url.searchParams.get('skill') ?? '').split(',').filter(Boolean));
+  chips.forEach((c) => c.setAttribute('aria-pressed', String(picked.has(c.dataset.skill!))));
+
+  const apply = () => {
+    const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const skills = chips.filter((c) => c.getAttribute('aria-pressed') === 'true').map((c) => c.dataset.skill!);
+    let shown = 0;
+    for (const c of cards) {
+      const ok =
+        terms.every((t) => c.dataset.search!.includes(t)) &&
+        (!avail.checked || c.dataset.available === '1') &&
+        (!loc?.value || c.dataset.loc!.includes(loc.value)) &&
+        skills.every((s) => c.dataset.skills!.split('|').includes(s));
+      c.hidden = !ok;
+      if (ok) shown++;
+    }
+    count.textContent = String(shown);
+    empty.hidden = shown > 0;
+    const next = new URL(location.href);
+    const set = (k: string, v: string) => (v ? next.searchParams.set(k, v) : next.searchParams.delete(k));
+    set('q', q.value.trim());
+    set('available', avail.checked ? '1' : '');
+    set('loc', loc?.value ?? '');
+    set('skill', skills.join(','));
+    history.replaceState(null, '', next);
+  };
+
+  q.addEventListener('input', apply);
+  avail.addEventListener('change', apply);
+  loc?.addEventListener('change', apply);
+  chips.forEach((c) => c.addEventListener('click', () => { c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); apply(); }));
+  apply();
+</script>
+
+<style>
+  .ex { padding: 8vh var(--gutter) 12vh; }
+  .back { text-decoration: none; }
+  .ex-head { display: grid; gap: 14px; margin-bottom: 36px; }
+  .ex-head h1 { font-size: clamp(64px, min(12vw, 22svh), 200px); line-height: .95; }
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 28px; position: sticky; top: 0; z-index: 5; padding: 12px 0; background: var(--bg); }
+  .q { flex: 1 1 320px; background: transparent; border: 2px solid var(--fg); color: var(--fg); font: 500 18px var(--body); padding: 12px 14px; }
+  .q:focus { outline: none; border-color: var(--accent); }
+  .avail { display: flex; gap: 8px; align-items: center; font-family: var(--mono); font-size: 13px; text-transform: uppercase; cursor: pointer; }
+  .avail input { accent-color: var(--accent); width: 18px; height: 18px; }
+  select { background: var(--bg); color: var(--fg); border: 1px solid var(--line); font: 13px var(--mono); padding: 11px 10px; text-transform: uppercase; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+  .chip { font: 12px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 7px 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+  .chip[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .card { background: var(--bg); color: var(--fg); border: 1px solid var(--line); transition: border-color .15s, transform .15s; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card a { display: grid; gap: 10px; padding: 22px; text-decoration: none; color: inherit; height: 100%; align-content: start; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .name { font-size: clamp(34px, 3.4vw, 48px); line-height: .95; overflow-wrap: break-word; }
+  .role { font-weight: 600; }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .stats b { font-size: 26px; font-weight: 400; color: var(--fg); margin-right: 4px; }
+  .stats b.accent { color: var(--accent); }
+  .skills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .empty { margin-top: 24px; font-size: 18px; }
+</style>

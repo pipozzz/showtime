@@ -29,8 +29,8 @@ if (SERVER_MODE) {
   {SERVER_MODE && (
     <nav class="top mono">
       {signedIn
-        ? <><a href={link('edit')}>Editor</a><a href={link('account')}>Account</a></>
-        : <><a href={link('login')}>Sign in</a>{signupOpen && <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a>}</>}
+        ? <><a href={link('explore')}>Explore</a><a href={link('edit')}>Editor</a><a href={link('account')}>Account</a></>
+        : <><a href={link('explore')}>Explore</a><a href={link('login')}>Sign in</a>{signupOpen && <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a>}</>}
     </nav>
   )}
   <header class="landing">
@@ -50,7 +50,7 @@ if (SERVER_MODE) {
       <p class="muted small">Reads your public profile and repos. Nothing is stored on a server.</p>
     </form>
     <div class="cta">
-      <a class="btn ghost" href="#stages">See the stages ↓</a>
+      <a class="btn ghost" href={link('explore')}>Explore stages →</a>
       <a class="btn ghost" href={link('edit?new')}>Start blank</a>
       <a class="btn ghost" href={link('themes')}>Browse themes</a>
       <a class="btn ghost" href="https://github.com/pipozzz/starring/generate">Use as GitHub template</a>
@@ -60,7 +60,7 @@ if (SERVER_MODE) {
   <section class="act" id="stages">
     <div class="act-label mono"><span class="num">Now playing</span><span>{profiles.length} stages</span></div>
     <ul class="stages">
-      {profiles.map((p) => {
+      {profiles.slice(0, 6).map((p) => {
         const t = totals(p);
         return (
           <li class="reveal" data-theme={p.theme}>
@@ -75,6 +75,7 @@ if (SERVER_MODE) {
         );
       })}
     </ul>
+    <a class="btn explore-all" href={link('explore')}>Explore all {profiles.length} stages →</a>
   </section>
 
   <section class="act how">
@@ -138,6 +139,7 @@ if (SERVER_MODE) {
   .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
   .btn.ghost.off { color: var(--muted); cursor: not-allowed; }
   .stages { list-style: none; display: grid; gap: 12px; }
+  .explore-all { display: inline-block; margin-top: 28px; }
   .stages li { background: var(--bg); color: var(--fg); padding: 0 clamp(16px, 3vw, 40px); border: 1px solid var(--line); }
   .stages li a { border-bottom: 0; }
   .stages a {

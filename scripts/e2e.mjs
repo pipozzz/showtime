@@ -67,7 +67,7 @@ const profile = {
 console.log(`Starring e2e → ${BASE}`);
 try {
   await step('home, themes, robots and sitemap respond', async () => {
-    for (const p of ['/', '/themes', '/robots.txt', '/sitemap.xml', '/og.png']) assert.equal((await call('GET', p)).status, 200, p);
+    for (const p of ['/', '/themes', '/explore', '/terms', '/privacy', '/robots.txt', '/sitemap.xml', '/og.png']) assert.equal((await call('GET', p)).status, 200, p);
   });
   await step('API refuses anonymous writes (401) and cross-origin writes (403)', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle, data: profile })).status, 401);
@@ -132,6 +132,7 @@ try {
     assert.equal(og.headers.get('content-type'), 'image/png');
     assert.equal((await call('GET', `/${handle}/card`)).status, 200);
     assert.match(await (await call('GET', '/sitemap.xml')).text(), new RegExp(handle));
+    assert.match(await (await call('GET', '/explore')).text(), new RegExp(`/${handle}`), 'listed on /explore');
     const oe = await call('GET', `/oembed?url=${encodeURIComponent(`${BASE}/${handle}/`)}`);
     assert.equal(oe.status, 200);
     assert.equal((await oe.json()).type, 'rich');
