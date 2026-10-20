@@ -1,0 +1,44 @@
+---
+import Legal from '../components/Legal.astro';
+import { SERVER_MODE } from '../lib/profiles';
+import { operator } from '../lib/operator';
+import { link } from '../lib/url';
+
+const op = operator();
+const who = op.name || 'the operator of this instance';
+const contact = op.email ? `<a href="mailto:${op.email}">${op.email}</a>` : 'the operator';
+---
+<Legal title="Terms" description="The rules for using this Starring instance.">
+  <p>These terms cover your use of this Starring site, run by <b>{who}</b>. Starring itself is open-source software under the MIT license; these terms are about this hosted service, not the code.</p>
+
+  {SERVER_MODE && (
+    <>
+      <h2>Your account</h2>
+      <ul>
+        <li>You need to be at least 16 to create an account.</li>
+        <li>Keep your sign-in details safe; you are responsible for what happens under your account.</li>
+        <li>One person, one profile. Your handle must not impersonate someone else, a company or a brand.</li>
+      </ul>
+    </>
+  )}
+
+  <h2>Your content</h2>
+  <ul>
+    <li>You own what you publish. You give us permission to host, display and share it as part of the service — on your profile page, in previews and embeds, and in the public directory.</li>
+    <li><b>Only publish what's true and what you're allowed to share.</b> Respect NDAs and confidentiality agreements: name clients only where you may, and never publish confidential details, code, logos or trademarks you don't have rights to.</li>
+    <li>No illegal content, harassment, hate, spam, malware, or misleading claims about experience you don't have.</li>
+  </ul>
+
+  <h2>Reports and removal</h2>
+  <p>Anyone can report a profile{SERVER_MODE ? <> with the <i>Report</i> link on it</> : ''}, or write to <Fragment set:html={contact} />. We may hide or remove content that breaks these terms or the law, and suspend accounts that do so repeatedly. If something of yours is removed and you think it was a mistake, tell us.</p>
+
+  <h2>The service</h2>
+  <ul>
+    <li>Starring is provided as is, free of charge, without guarantees of availability or fitness for a particular purpose. Keep your own copy of your profile (export it as YAML from the editor).</li>
+    <li>To the extent the law allows, we are not liable for indirect damages or lost profits arising from use of the service. Nothing here limits liability that cannot be limited by law.</li>
+    <li>We may change these terms; we'll update the date above and, for significant changes, tell account holders by email.</li>
+  </ul>
+
+  <h2>Ending</h2>
+  <p>{SERVER_MODE ? <>You can delete your account at any time from <a href={link('account')}>Account</a>. </> : ''}We may end the service with reasonable notice. These terms are governed by the law of {op.country || 'the operator’s country'}, without affecting rights you have as a consumer where you live.</p>
+</Legal>

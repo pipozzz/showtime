@@ -221,6 +221,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
           {links.map(([k, v]) => <li key={k}><a href={v}>{k} ↗</a></li>)}
         </ul>
         <p className="mono muted">Made with Starring — open source</p>
+        <p className="mono muted legal-links"><a href={link('terms')}>Terms</a> · <a href={link('privacy')}>Privacy</a></p>
       </footer>
     </div>
   );

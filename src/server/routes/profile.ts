@@ -2,16 +2,17 @@ import type { APIRoute } from 'astro';
 import { getSession } from '../auth';
 import { fail, json, sameOrigin } from '../http';
 import { ProfileError, deleteProfile, getByUser, saveProfile, setPublished } from '../profiles';
+import { isAdmin } from '../blocklist';
 
 export const prerender = false;
 
-type Guard = { error: Response; userId?: never } | { error?: never; userId: string };
+type Guard = { error: Response; userId?: never; admin?: never } | { error?: never; userId: string; admin: boolean };
 
 const guard = async (request: Request): Promise<Guard> => {
   if (request.method !== 'GET' && !sameOrigin(request)) return { error: fail(403, 'Cross-origin request blocked') };
   const session = await getSession(request);
   if (!session) return { error: fail(401, 'Sign in first') };
-  return { userId: session.user.id };
+  return { userId: session.user.id, admin: isAdmin(session.user.email) };
 };
 
 const handleErrors = (e: unknown) => {
@@ -34,7 +35,7 @@ export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as { handle?: string; data?: unknown; published?: boolean };
     if (!body.handle) return fail(400, 'handle is required');
-    return json(await saveProfile(g.userId, { handle: body.handle, data: body.data, published: body.published }));
+    return json(await saveProfile(g.userId, { handle: body.handle, data: body.data, published: body.published }, { admin: g.admin }));
   } catch (e) {
     return handleErrors(e);
   }

@@ -1,0 +1,72 @@
+---
+import Layout from '../../components/Layout.astro';
+import { getSession } from '../auth';
+import { isAdmin } from '../blocklist';
+import { REASONS, hiddenProfiles, openReports, type Reason } from '../moderation';
+import { link } from '../../lib/url';
+
+export const prerender = false;
+const session = await getSession(Astro.request);
+if (!session) return Astro.redirect(`${link('login')}?next=${encodeURIComponent(link('admin'))}`);
+if (!isAdmin(session.user.email)) return new Response('Admins only — add your email to ADMIN_EMAILS', { status: 403 });
+const reports = await openReports();
+const hidden = await hiddenProfiles();
+---
+<Layout title="Admin — Starring" fonts={['acid']} noindex>
+  <main class="adm">
+    <a class="mono accent back" href={link()}>← Starring</a>
+    <h1 class="display">Moderation</h1>
+
+    <h2 class="mono">Open reports ({reports.length})</h2>
+    {reports.length === 0 && <p class="muted">Nothing to review.</p>}
+    <ul class="list">
+      {reports.map((r) => (
+        <li data-report={r.id} data-handle={r.handle}>
+          <div><a href={link(r.handle)} target="_blank" rel="noreferrer">/{r.handle} ↗</a> <span class="tag">{REASONS[r.reason as Reason] ?? r.reason}</span></div>
+          {r.details && <p class="muted">“{r.details}”</p>}
+          <p class="mono muted">{r.createdAt.toLocaleString('en')}</p>
+          <div class="row">
+            <button class="btn" data-action="hide">Hide profile</button>
+            <button class="btn ghost" data-action="dismiss">Dismiss</button>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="mono">Hidden profiles ({hidden.length})</h2>
+    <ul class="list">
+      {hidden.map((h) => (
+        <li data-handle={h.handle}>
+          <div>/{h.handle} <span class="muted">— {h.hiddenReason}</span></div>
+          <div class="row"><button class="btn ghost" data-action="unhide">Unhide</button></div>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const li = b.closest<HTMLElement>('li')!;
+      const action = b.dataset.action;
+      const reason = action === 'hide' ? prompt('Reason shown to the owner (optional)', 'Breaks the terms') ?? undefined : undefined;
+      const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, reportId: li.dataset.report, handle: li.dataset.handle, reason }) });
+      if (res.ok) location.reload();
+      else alert((await res.json().catch(() => ({}))).error ?? 'Failed');
+    }),
+  );
+</script>
+
+<style>
+  .adm { max-width: 860px; margin: 0 auto; padding: 8vh var(--gutter); display: grid; gap: 18px; }
+  .back { text-decoration: none; }
+  h1 { font-size: clamp(56px, 9vw, 96px); }
+  h2 { color: var(--accent); margin-top: 24px; }
+  .list { list-style: none; display: grid; gap: 10px; }
+  .list li { border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; }
+  .list a { color: var(--fg); }
+  .row { display: flex; gap: 8px; }
+  .btn { font-family: var(--mono); text-transform: uppercase; font-size: 12px; padding: 10px 14px; border: 0; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+</style>

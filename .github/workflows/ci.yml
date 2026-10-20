@@ -85,6 +85,7 @@ jobs:
       BETTER_AUTH_URL: http://localhost:4321
       SITE_URL: http://localhost:4321
       BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-000000
+      ADMIN_EMAILS: e2e-admin@starring.test
       SMTP_HOST: 127.0.0.1
       SMTP_PORT: 1025
       HOST: 127.0.0.1
@@ -107,6 +108,7 @@ jobs:
         env:
           E2E_URL: http://localhost:4321
           MAILPIT_URL: http://127.0.0.1:8025
+          E2E_ADMIN_EMAIL: e2e-admin@starring.test
       - name: Server log
         if: failure()
         run: cat server.log

@@ -35,6 +35,11 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
           # optional analytics: set the repo variable PLAUSIBLE_SRC (Settings → Secrets and variables → Actions → Variables)
           PLAUSIBLE_SRC: ${{ vars.PLAUSIBLE_SRC }}
+          # shown on /terms and /privacy — set as repo variables
+          OPERATOR_NAME: ${{ vars.OPERATOR_NAME }}
+          OPERATOR_EMAIL: ${{ vars.OPERATOR_EMAIL }}
+          OPERATOR_ADDRESS: ${{ vars.OPERATOR_ADDRESS }}
+          OPERATOR_COUNTRY: ${{ vars.OPERATOR_COUNTRY }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

@@ -1,0 +1,60 @@
+---
+import Legal from '../components/Legal.astro';
+import { SERVER_MODE } from '../lib/profiles';
+import { operator } from '../lib/operator';
+import { link } from '../lib/url';
+
+const op = operator();
+const who = op.name ? `${op.name}${op.address ? `, ${op.address}` : ''}${op.country ? `, ${op.country}` : ''}` : 'the operator of this instance';
+const contact = op.email ? `<a href="mailto:${op.email}">${op.email}</a>` : 'the operator';
+const analytics = !!process.env.PLAUSIBLE_SRC;
+---
+<Legal title="Privacy" description="What Starring stores, why, for how long, and your rights.">
+  <p>This instance of Starring is run by <b>{who}</b> (the “controller” under the GDPR). Questions or requests: <Fragment set:html={contact} />. Starring is open-source software; this notice describes how <i>this</i> site uses it.</p>
+
+  <h2>The short version</h2>
+  <ul>
+    <li>Your profile is what you choose to publish. Drafts are private until you press Publish.</li>
+    <li>Imports from GitHub, LinkedIn exports, JSON Resume and <code>starring-cli scan</code> are converted <b>in your browser</b>. For LinkedIn, only profile, positions, education, skills, projects and certifications are read — messages and connections are never opened.</li>
+    <li>No advertising, no selling data, no third-party trackers{analytics ? ' — only cookieless, aggregate page-view statistics' : ''}.</li>
+    {SERVER_MODE && <li>You can delete your account at any time from <a href={link('account')}>Account</a>; it removes your profile and everything stored about you.</li>}
+  </ul>
+
+  {SERVER_MODE && (
+    <>
+      <h2>What we store</h2>
+      <ul>
+        <li><b>Account:</b> name, email address, a hashed password (if you use one), whether your email is confirmed, and sign-in sessions (with IP address and browser, to keep you signed in and protect the account).</li>
+        <li><b>Sign-in with GitHub or GitLab:</b> your account id there and the access token it issues, used only to import your public profile and contribution counts when you ask.</li>
+        <li><b>Your profile:</b> the content you enter or import — name, role, clients, projects, timeline, education, skills, links and commit counts — and whether it is published.</li>
+        <li><b>Reports:</b> if you report a profile, the reason and details you give.</li>
+      </ul>
+
+      <h2>Why (legal basis)</h2>
+      <ul>
+        <li>To provide the service you signed up for — your account and your public profile (contract, Art. 6(1)(b) GDPR).</li>
+        <li>To keep the service secure and free of abuse — rate limiting, session records, handling reports (legitimate interest, Art. 6(1)(f)).</li>
+        <li>To send emails you need — password reset and address confirmation. No newsletters unless you opt in separately.</li>
+      </ul>
+
+      <h2>How long</h2>
+      <p>Account and profile data are kept until you delete your account. Expired sessions and used reset links are removed automatically. Reports are kept as long as needed to handle them.</p>
+    </>
+  )}
+
+  <h2>Public profiles</h2>
+  <p>A published profile is public: anyone can see it, search engines may index it, and others may share or embed it. Only publish what you are allowed to share — Starring shows client names as text and lets you mark work as under NDA, but you are responsible for respecting your contracts.</p>
+
+  {analytics && (
+    <>
+      <h2>Statistics</h2>
+      <p>We count page views with a privacy-friendly, cookieless analytics tool (Plausible). It does not use cookies, does not track you across sites and does not store personal data; IP addresses are only used to compute a daily anonymous count.</p>
+    </>
+  )}
+
+  <h2>Who processes data for us</h2>
+  <p>{SERVER_MODE ? 'Hosting of the application and its database, and the email provider used to send account emails' : 'The static hosting provider'}{analytics ? ', and the analytics service' : ''}. They process data only on our behalf. Profile pages load fonts from Google Fonts, which receives your IP address when the page loads.</p>
+
+  <h2>Your rights</h2>
+  <p>You can access, correct, export and delete your data{SERVER_MODE ? ' — export your profile from the editor (YAML), and delete everything from Account' : ''}. You can also object to processing, ask us to restrict it, and complain to your data-protection authority. Contact <Fragment set:html={contact} /> for anything else.</p>
+</Legal>

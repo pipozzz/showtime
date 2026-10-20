@@ -55,7 +55,7 @@ export interface Profile {
 
 export const HANDLE = /^[a-z0-9][a-z0-9-]{1,38}$/;
 /** Handles that would collide with app routes. */
-export const RESERVED = ['edit', 'api', 'login', 'logout', 'settings', 'examples', 'profiles', 'assets', 'admin', 'new', 'themes', 'og', 'oembed', 'sitemap', 'robots', 'favicon', 'forgot-password', 'reset-password'];
+export const RESERVED = ['edit', 'api', 'login', 'logout', 'settings', 'examples', 'profiles', 'assets', 'admin', 'new', 'themes', 'og', 'oembed', 'sitemap', 'robots', 'favicon', 'forgot-password', 'reset-password', 'terms', 'privacy', 'report', 'support', 'help', 'about'];
 export const THIS_YEAR = new Date().getFullYear();
 
 export const blankProfile = (): Profile => ({

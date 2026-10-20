@@ -42,6 +42,7 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
           <a class="hint signin-only forgot" href={link('forgot-password')}>Forgot password?</a>
         </label>
         <p class="error" role="alert" hidden></p>
+        {mode === 'signup' && <p class="hint">By creating an account you agree to the <a href={link('terms')}>Terms</a> and <a href={link('privacy')}>Privacy notice</a>.</p>}
         <button class="btn" type="submit">{mode === 'signup' ? 'Create account →' : 'Sign in →'}</button>
       </form>
     )}
@@ -117,6 +118,7 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
   [data-mode='signin'] .signup-only { display: none; }
   [data-mode='signup'] .signin-only { display: none; }
   .forgot { color: var(--accent); justify-self: end; }
+  .hint a { color: var(--accent); }
   .notice { color: var(--accent); }
   .error { color: #ff6b5e; }
   .btn {

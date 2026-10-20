@@ -140,6 +140,9 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `SMTP_URL` | none | Alternative to the above as one URL, e.g. `smtps://user:pass@mail.example.com:465`. Special characters in the password must be URL-encoded. |
 | `MAIL_FROM` | `Starring <no-reply@starring.dev>` | Sender address. Use a domain your provider has verified (SPF/DKIM). |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | `true` blocks sign-in until the address is confirmed. Needs `SMTP_URL`. |
+| `OPERATOR_NAME` / `OPERATOR_EMAIL` / `OPERATOR_ADDRESS` / `OPERATOR_COUNTRY` | none | Shown on `/terms` and `/privacy`. As the operator you are the data controller for your instance. |
+| `ADMIN_EMAILS` | none | Comma-separated. These accounts can open `/admin`, hide reported profiles, receive report emails and claim blocked handles. |
+| `BLOCKED_HANDLES` | none | Extra handles nobody may claim, added to the built-in list of brands and "official"-looking words |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
 
 ## Security notes
@@ -151,6 +154,13 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 - Unpublished profiles return 404 to everyone, including search engines.
 - Users can delete their account from `/account`, which also deletes their profile.
 - **Email:** with `SMTP_HOST` (or `SMTP_URL`) set, there's "Forgot password?" (single-use link, valid 1 hour, signs out every other session) and a confirmation email on sign-up. `REQUIRE_EMAIL_VERIFICATION=true` makes that confirmation mandatory. The reset form answers the same way whether or not an account exists, so it can't be used to probe for addresses.
+
+## Terms, privacy and moderation
+
+- **`/terms` and `/privacy`** are templates written for an EU/GDPR context. They describe what Starring actually stores and does, and fill in `OPERATOR_*`. They're a solid starting point, **not legal advice**: have them reviewed for your situation before a public launch.
+- **Impersonation:** handles of well-known brands and platforms (`google`, `github`, `warnerbros`, `the-economist`…) and anything that looks official (`admin`, `support`, `official-…`, `starring-…`) can't be claimed. Extend the list with `BLOCKED_HANDLES`. Admins can still claim them, for example for a company's real page.
+- **Reports:** every public profile has a *Report* link (`/report?h=<handle>`) with a reason and optional details. Reports are rate-limited and emailed to `ADMIN_EMAILS` when SMTP is set.
+- **Moderation (`/admin`):** review open reports and **hide** a profile. A hidden profile disappears from its page, the directory, the sitemap, OG and oEmbed, and the owner can't re-publish it. The owner sees the reason on their account page. You can also **dismiss** a report or **unhide** a profile.
 
 ## Local development in server mode
 

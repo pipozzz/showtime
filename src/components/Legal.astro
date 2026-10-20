@@ -1,0 +1,39 @@
+---
+import Layout from './Layout.astro';
+import { link } from '../lib/url';
+import { operator } from '../lib/operator';
+
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+const op = operator();
+---
+<Layout title={`${title} — Starring`} description={description} fonts={['acid']}>
+  <main class="legal">
+    <a class="mono accent back" href={link()}>← Starring</a>
+    <h1 class="display">{title}</h1>
+    <p class="mono muted">Last updated {op.updated}</p>
+    {!op.name && (
+      <p class="warn mono">This instance's operator hasn't published their details yet (OPERATOR_NAME / OPERATOR_EMAIL).</p>
+    )}
+    <article><slot /></article>
+    <footer class="mono muted">
+      <a href={link('terms')}>Terms</a> · <a href={link('privacy')}>Privacy</a> · <a href="https://github.com/pipozzz/starring">Open source</a>
+    </footer>
+  </main>
+</Layout>
+
+<style>
+  .legal { max-width: 720px; margin: 0 auto; padding: 10vh var(--gutter) 12vh; }
+  .back { text-decoration: none; }
+  h1 { font-size: clamp(56px, 10vw, 104px); margin: 18px 0 8px; }
+  .warn { color: #ffb020; margin: 16px 0; }
+  article { margin-top: 36px; line-height: 1.7; font-size: 17px; }
+  article :global(h2) { font-family: var(--display); text-transform: uppercase; font-weight: 400; font-size: 30px; margin: 40px 0 10px; letter-spacing: .01em; }
+  article :global(p), article :global(ul) { margin: 0 0 14px; color: color-mix(in srgb, var(--fg) 88%, transparent); }
+  article :global(ul) { padding-left: 22px; }
+  article :global(li) { margin-bottom: 6px; }
+  article :global(a) { color: var(--accent); }
+  article :global(code) { font-family: var(--mono); font-size: .9em; background: var(--line); padding: 1px 5px; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); }
+  footer a { color: inherit; }
+</style>

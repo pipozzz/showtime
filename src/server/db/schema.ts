@@ -66,7 +66,26 @@ export const profile = pgTable(
     userId: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }),
     data: jsonb('data').$type<Profile>().notNull(),
     published: boolean('published').notNull().default(false),
+    /** Set by a moderator: the profile is off every public surface and can't be re-published. */
+    hiddenAt: timestamp('hidden_at', { withTimezone: true }),
+    hiddenReason: text('hidden_reason'),
     ...timestamps,
   },
   (t) => [index('profile_published_idx').on(t.published)],
+);
+
+/** Abuse reports from the "Report" link on public profiles. */
+export const report = pgTable(
+  'report',
+  {
+    id: text('id').primaryKey(),
+    handle: text('handle').notNull(),
+    reason: text('reason').notNull(),
+    details: text('details'),
+    reporterUserId: text('reporter_user_id').references(() => user.id, { onDelete: 'set null' }),
+    status: text('status').notNull().default('open'), // open | dismissed | actioned
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  },
+  (t) => [index('report_status_idx').on(t.status)],
 );

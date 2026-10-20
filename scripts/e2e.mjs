@@ -23,17 +23,19 @@ const inbox = async (to, subject) => {
   throw new Error(`no "${subject}" email for ${to} within 10s`);
 };
 const handle = `e2e-${id}`;
-let cookie = '';
+const jars = { user: '', admin: '' };
+let as = 'user';
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 
 const call = async (method, path, body, headers = {}) => {
   const res = await fetch(BASE + path, {
     method,
     redirect: 'manual',
-    headers: { Origin: ORIGIN, ...(body && { 'Content-Type': 'application/json' }), ...(cookie && { Cookie: cookie }), ...headers },
+    headers: { Origin: ORIGIN, ...(body && { 'Content-Type': 'application/json' }), ...(jars[as] && { Cookie: jars[as] }), ...headers },
     body: body ? JSON.stringify(body) : undefined,
   });
   const set = res.headers.getSetCookie?.() ?? [];
-  if (set.length) cookie = set.map((c) => c.split(';')[0]).join('; ');
+  if (set.length) jars[as] = set.map((c) => c.split(';')[0]).join('; ');
   return res;
 };
 /** Assert the status, then return the parsed body (read once). */
@@ -104,6 +106,7 @@ try {
   }
   await step('reserved and file-owned handles are rejected', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle: 'edit', data: profile })).status, 409);
+    assert.equal((await call('PUT', '/api/profile', { handle: 'google', data: profile })).status, 409, 'brand handles are blocked');
     const nova = await call('GET', '/api/handle?h=nova');
     assert.equal((await nova.json()).ok, false);
   });
@@ -133,12 +136,39 @@ try {
     assert.equal(oe.status, 200);
     assert.equal((await oe.json()).type, 'rich');
   });
+  await step('anyone can report a public profile', async () => {
+    const saved = jars.user; jars.user = '';
+    await expect(await call('POST', '/api/report', { handle, reason: 'spam', details: 'e2e' }), 200);
+    assert.equal((await call('POST', '/api/report', { handle, reason: 'nope' })).status, 400);
+    assert.equal((await call('POST', '/api/report', { handle: 'no-such-handle-xyz', reason: 'spam' })).status, 404);
+    assert.equal((await call('GET', `/report?h=${handle}`)).status, 200);
+    jars.user = saved;
+  });
+  if (ADMIN_EMAIL) {
+    await step('admin hides a reported profile; the owner cannot re-publish; unhide restores', async () => {
+      as = 'admin';
+      await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Admin', email: ADMIN_EMAIL, password: randomBytes(18).toString('base64url') }), 200);
+      const page = await expect(await call('GET', '/admin'), 200);
+      assert.match(page, new RegExp(`/${handle}`));
+      await expect(await call('POST', '/api/admin', { action: 'hide', handle, reason: 'e2e' }), 200);
+      as = 'user';
+      assert.equal((await call('GET', `/${handle}`)).status, 404, 'hidden profile is gone');
+      assert.equal((await call('PATCH', '/api/profile', { published: true })).status, 403, 'owner cannot re-publish');
+      assert.equal((await call('POST', '/api/admin', { action: 'unhide', handle })).status, 403, 'non-admins cannot moderate');
+      as = 'admin';
+      await expect(await call('POST', '/api/admin', { action: 'unhide', handle }), 200);
+      await expect(await call('POST', '/api/auth/delete-user', {}), 200);
+      as = 'user';
+      await expect(await call('PATCH', '/api/profile', { published: true }), 200);
+    });
+  }
   await step('unpublish hides the page again', async () => {
     assert.equal((await call('PATCH', '/api/profile', { published: false })).status, 200);
     assert.equal((await call('GET', `/${handle}`)).status, 404);
   });
 } finally {
-  if (cookie) {
+  if (jars.user) {
+    as = 'user';
     await step('delete account (cleans up the profile)', async () => {
       await expect(await call('POST', '/api/auth/delete-user', {}), 200);
       assert.equal((await call('GET', `/${handle}`)).status, 404);

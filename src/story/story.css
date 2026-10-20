@@ -115,6 +115,7 @@
 .credits h2 { font-size: clamp(44px, 10cqi, 180px); line-height: 0.95; text-wrap: balance; overflow-wrap: break-word; }
 .credits ul { list-style: none; display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
 .credits a { color: var(--accent); }
+.credits .legal-links a { color: inherit; }
 
 @container (max-width: 760px) {
   .project.vis-nda { background: linear-gradient(90deg, var(--bg) 78%, transparent 100%), repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--fg) 6%, transparent) 14px 28px); }

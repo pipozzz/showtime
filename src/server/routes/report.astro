@@ -1,0 +1,78 @@
+---
+import Layout from '../../components/Layout.astro';
+import { REASONS } from '../moderation';
+import { getPublished } from '../profiles';
+import { link } from '../../lib/url';
+
+export const prerender = false;
+const handle = (Astro.url.searchParams.get('h') ?? '').toLowerCase();
+const target = handle ? await getPublished(handle) : undefined;
+if (!target) return new Response(null, { status: 404 });
+---
+<Layout title={`Report /${handle} — Starring`} fonts={['acid']} noindex>
+  <main class="auth" data-handle={handle}>
+    <a class="mono accent back" href={link(handle)}>← /{handle}</a>
+    <h1 class="display">Report<br /><span class="accent">/{handle}</span></h1>
+    <p class="muted">Tell the operator what's wrong with <b>{target.profile.name}</b>'s profile. Reports are reviewed by a person; the profile owner doesn't see who reported it.</p>
+    <form class="form" novalidate>
+      <fieldset class="reasons">
+        {Object.entries(REASONS).map(([id, label]) => (
+          <label class="reason"><input type="radio" name="reason" value={id} required /> {label}</label>
+        ))}
+      </fieldset>
+      <label class="field"><span class="mono">Details (optional)</span><textarea name="details" rows="4" maxlength="2000"></textarea></label>
+      <p class="error" role="alert" hidden></p>
+      <button class="btn" type="submit">Send report →</button>
+    </form>
+  </main>
+</Layout>
+
+<script>
+  const root = document.querySelector<HTMLElement>('.auth')!;
+  const form = root.querySelector<HTMLFormElement>('.form')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const err = form.querySelector<HTMLElement>('.error')!;
+    if (!f.get('reason')) { err.textContent = 'Pick a reason.'; err.hidden = false; return; }
+    const res = await fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ handle: root.dataset.handle, reason: f.get('reason'), details: f.get('details') }) });
+    if (res.ok) { form.outerHTML = '<p class="ok">Thanks — the report was sent to the operator.</p>'; return; }
+    const data = await res.json().catch(() => ({}));
+    err.textContent = data.error || 'Could not send the report.'; err.hidden = false;
+  });
+</script>
+
+<style>
+  .reasons { border: 0; display: grid; gap: 8px; }
+  .reason { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+  .reason input { accent-color: var(--accent); }
+  textarea { background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 12px; }
+  .ok { color: var(--accent); font-size: 18px; }
+  .auth { min-height: 100svh; display: grid; align-content: center; gap: 28px; padding: 10vh var(--gutter); max-width: 560px; margin: 0 auto; }
+  .back { text-decoration: none; }
+  h1 { font-size: clamp(64px, 12vw, 120px); }
+  .social { display: grid; gap: 10px; }
+  .form { display: grid; gap: 16px; }
+  .or { text-align: center; }
+  .field { display: grid; gap: 6px; }
+  .field .mono { color: var(--muted); }
+  .field input {
+    background: transparent; border: 1px solid var(--line); color: var(--fg);
+    font: inherit; padding: 14px 14px; border-radius: 0;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .hint { font-size: 13px; color: var(--muted); }
+  [data-mode='signin'] .signup-only { display: none; }
+  [data-mode='signup'] .signin-only { display: none; }
+  .forgot { color: var(--accent); justify-self: end; }
+  .hint a { color: var(--accent); }
+  .notice { color: var(--accent); }
+  .error { color: #ff6b5e; }
+  .btn {
+    font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; font-size: 14px;
+    padding: 16px 20px; border: 0; cursor: pointer; background: var(--accent); color: var(--accent-ink);
+  }
+  .btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+  .btn:disabled { opacity: .5; cursor: progress; }
+  .switch a { color: var(--accent); }
+</style>
