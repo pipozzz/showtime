@@ -96,11 +96,14 @@ const graphql = async <T>(token: string, query: string, variables: object): Prom
 const top = (counts: Map<string, number>, n: number) =>
   [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 
+/** Topics that describe the repo's status or events, not a skill. */
+const NOT_SKILLS = new Set(['hacktoberfest', 'awesome', 'awesome-list', 'good-first-issue', 'help-wanted', 'open-source', 'opensource', 'first-timers-only', 'beginner-friendly']);
+
 const prettyTopic = (t: string) => t.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const toProject = (r: GhRepo): Project => {
   const impact = [
-    r.stargazers_count > 0 && `${r.stargazers_count.toLocaleString('en')} stars`,
+    r.stargazers_count > 0 && `${r.stargazers_count.toLocaleString('en')} ${r.stargazers_count === 1 ? 'star' : 'stars'}`,
     r.forks_count > 4 && `${r.forks_count.toLocaleString('en')} forks`,
   ].filter(Boolean) as string[];
   return {
@@ -139,7 +142,7 @@ export async function importGithub(input: string, opts: { token?: string; base?:
   const topics = new Map<string, number>();
   own.forEach((r) => {
     if (r.language) langs.set(r.language, (langs.get(r.language) ?? 0) + 1);
-    r.topics?.forEach((t) => topics.set(t, (topics.get(t) ?? 0) + 1));
+    r.topics?.filter((t) => !NOT_SKILLS.has(t)).forEach((t) => topics.set(t, (topics.get(t) ?? 0) + 1));
   });
 
   let contribs: Contribution[] = [];
@@ -189,7 +192,7 @@ export async function importGithub(input: string, opts: { token?: string; base?:
     },
   };
 
-  if (user.company) notes.push(`GitHub lists “${user.company.replace(/^@/, '')}” as your company — add it to the Timeline with dates.`);
+  if (user.company?.trim()) notes.push(`GitHub lists “${user.company.trim().replace(/^@/, '')}” as your company — add it to the Timeline with dates.`);
   if (!featured.length) notes.push('No public repositories to feature yet — add your best private or NDA work by hand.');
   if (profile.profile.role === 'Software Engineer' && base.profile.role !== 'Software Engineer') {
     notes.push('Role was set to “Software Engineer” — make it yours.');

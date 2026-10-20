@@ -11,7 +11,7 @@ const user = {
   company: '@acme', html_url: 'https://github.com/Octo-Dev', twitter_username: 'octo', email: null, hireable: true, public_repos: 3,
 };
 const repos = [
-  { name: 'star', description: 'Popular', language: 'TypeScript', topics: ['web-components'], stargazers_count: 120, forks_count: 10, fork: false, archived: false, html_url: 'https://github.com/Octo-Dev/star', pushed_at: '2025-03-01T00:00:00Z' },
+  { name: 'star', description: 'Popular', language: 'TypeScript', topics: ['web-components', 'hacktoberfest'], stargazers_count: 120, forks_count: 10, fork: false, archived: false, html_url: 'https://github.com/Octo-Dev/star', pushed_at: '2025-03-01T00:00:00Z' },
   { name: 'forked', description: null, language: 'Go', stargazers_count: 999, forks_count: 0, fork: true, archived: false, html_url: 'x', pushed_at: '2025-01-01T00:00:00Z' },
   { name: 'old', description: null, language: 'Go', stargazers_count: 1, forks_count: 0, fork: false, archived: true, html_url: 'x', pushed_at: '2019-01-01T00:00:00Z' },
 ];
@@ -46,6 +46,7 @@ test('builds a draft from public data without a token', async () => {
   assert.deepEqual(profile.projects?.map((p) => p.title), ['star'], 'skips forks and archived repos');
   assert.deepEqual(profile.projects?.[0].impact, ['120 stars', '10 forks']);
   assert.deepEqual(profile.skills?.Languages, ['TypeScript']);
+  assert.deepEqual(profile.skills?.Topics, ['Web Components'], 'event tags like hacktoberfest are not skills');
   assert.ok(notes.some((n) => /token/.test(n)));
   assert.ok(notes.some((n) => /acme/.test(n)));
 });

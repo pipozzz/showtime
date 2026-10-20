@@ -76,7 +76,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
           </div>
           <p className="iceberg reveal">
             <span className="display accent">{t.privateShare}%</span>
-            of this work lives in private repos. GitHub only shows the tip.
+            {t.privateShare >= 50 ? "of this work lives in private repos. GitHub only shows the tip." : "of this work lives in private repos — the part GitHub never shows."}
           </p>
           <div className="split reveal" aria-label="Public versus private commits">
             <div className="split-pub" style={{ flex: t.public || 0.0001 }}><span className="mono">Public {n(t.public)}</span></div>

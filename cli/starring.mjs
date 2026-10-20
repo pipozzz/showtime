@@ -88,5 +88,5 @@ if (toStdout) {
   for (const y of result.years.slice(0, 8)) log(`  ${y.year}  ${'█'.repeat(Math.max(1, Math.round((y.commits / result.years.reduce((m, x) => Math.max(m, x.commits), 1)) * 30)))} ${y.commits}`);
   for (const p of result.platforms) log(`  ${p.name}: ${p.repos} repos, ${p.commits} commits`);
   log(`\n✓ Wrote ${out} — only dates and counts; open it to check.`);
-  log('  Next: Starring editor → Start from → Import YAML / JSON Resume / activity… and drop the file in.');
+  log('  Next: Starring editor → Start from → Import YAML / JSON Resume / scan… and drop the file in.');
 }
