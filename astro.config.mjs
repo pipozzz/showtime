@@ -21,6 +21,8 @@ const serverRoutes = () => ({
         '/api/handle': 'src/server/routes/handle.ts',
         '/login': 'src/server/routes/login.astro',
         '/account': 'src/server/routes/account.astro',
+        '/forgot-password': 'src/server/routes/forgot-password.astro',
+        '/reset-password': 'src/server/routes/reset-password.astro',
         '/oembed': 'src/server/routes/oembed.ts',
         '/api/import/github': 'src/server/routes/import-github.ts',
       };

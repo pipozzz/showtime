@@ -15,5 +15,13 @@ services:
       interval: 2s
       timeout: 3s
       retries: 20
+  # Catches outgoing email in development: SMTP on 1025, inbox UI on http://localhost:8025
+  #   SMTP_URL=smtp://127.0.0.1:1025
+  mail:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
 volumes:
   starring-dev-db:

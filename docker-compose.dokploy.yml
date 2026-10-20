@@ -41,6 +41,9 @@ services:
       GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
       GITLAB_ISSUER: ${GITLAB_ISSUER:-https://gitlab.com}
       PLAUSIBLE_SRC: ${PLAUSIBLE_SRC:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Starring <no-reply@starring.dev>}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4321/ >/dev/null || exit 1"]
       interval: 15s

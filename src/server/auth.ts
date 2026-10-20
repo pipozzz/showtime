@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
 import { count } from 'drizzle-orm';
 import { db, schema } from './db';
+import { mailEnabled, resetPasswordMail, sendMail, verifyEmailMail } from './mail';
 
 const env = process.env;
 const flag = (v: string | undefined, fallback: boolean) => (v === undefined ? fallback : /^(1|true|yes)$/i.test(v));
@@ -13,6 +14,9 @@ export const instance = {
   /** Invite-only: these emails may sign up even when ALLOW_SIGNUP=false (comma-separated). */
   signupAllowlist: (env.SIGNUP_ALLOWLIST ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
   passwordLogin: flag(env.AUTH_PASSWORD, true),
+  /** Block sign-in until the address is confirmed (needs SMTP_URL). */
+  requireVerification: flag(env.REQUIRE_EMAIL_VERIFICATION, false) && mailEnabled,
+  mail: mailEnabled,
   github: !!(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
   gitlab: !!(env.GITLAB_CLIENT_ID && env.GITLAB_CLIENT_SECRET),
 };
@@ -48,6 +52,15 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: instance.passwordLogin,
     minPasswordLength: 10,
+    requireEmailVerification: instance.requireVerification,
+    revokeSessionsOnPasswordReset: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    sendResetPassword: async ({ user, url }) => sendMail(resetPasswordMail(user.email, url)),
+  },
+  emailVerification: {
+    sendOnSignUp: mailEnabled,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => sendMail(verifyEmailMail(user.email, url)),
   },
   socialProviders: {
     ...(instance.github && {

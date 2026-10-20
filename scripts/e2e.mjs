@@ -10,7 +10,18 @@ const BASE = (process.env.E2E_URL ?? 'http://localhost:4321').replace(/\/$/, '')
 const ORIGIN = new URL(BASE).origin;
 const id = randomBytes(4).toString('hex');
 const email = `e2e-${id}@starring.test`;
-const password = randomBytes(18).toString('base64url');
+let password = randomBytes(18).toString('base64url');
+const MAILPIT = process.env.MAILPIT_URL?.replace(/\/$/, '');
+/** Wait for a message to `to` whose subject contains `subject`; returns Mailpit's message JSON. */
+const inbox = async (to, subject) => {
+  for (let i = 0; i < 40; i++) {
+    const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:${to}`)}`).then((r) => r.json());
+    const hit = list.messages?.find((m) => m.Subject.includes(subject));
+    if (hit) return fetch(`${MAILPIT}/api/v1/message/${hit.ID}`).then((r) => r.json());
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`no "${subject}" email for ${to} within 10s`);
+};
 const handle = `e2e-${id}`;
 let cookie = '';
 
@@ -70,6 +81,27 @@ try {
     const gh = await call('POST', '/api/import/github', {});
     assert.equal(gh.status, 404, 'email accounts have no GitHub token');
   });
+  // Needs SMTP_URL on the server and MAILPIT_URL here (Mailpit catches the mail).
+  if (MAILPIT) {
+    await step('verification email is sent on sign-up', async () => {
+      const msg = await inbox(email, 'Confirm your email');
+      assert.match(msg.Text, /verify-email\?token=/);
+    });
+    await step('password reset by email: link → new password → old one stops working', async () => {
+      await expect(await call('POST', '/api/auth/request-password-reset', { email, redirectTo: '/reset-password' }), 200);
+      const msg = await inbox(email, 'Reset your Starring password');
+      const url = /https?:\/\/\S+\/api\/auth\/reset-password\/\S+/.exec(msg.Text)?.[0];
+      assert.ok(url, 'reset link in the email');
+      const hop = await fetch(url.replace(/^https?:\/\/[^/]+/, BASE), { redirect: 'manual' });
+      const token = new URL(hop.headers.get('location') ?? '', BASE).searchParams.get('token');
+      assert.ok(token, `redirected to /reset-password with a token (got ${hop.headers.get('location')})`);
+      const newPassword = randomBytes(18).toString('base64url');
+      await expect(await call('POST', '/api/auth/reset-password', { newPassword, token }), 200);
+      assert.equal((await call('POST', '/api/auth/sign-in/email', { email, password })).status, 401, 'old password rejected');
+      await expect(await call('POST', '/api/auth/sign-in/email', { email, password: newPassword }), 200);
+      password = newPassword;
+    });
+  }
   await step('reserved and file-owned handles are rejected', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle: 'edit', data: profile })).status, 409);
     const nova = await call('GET', '/api/handle?h=nova');

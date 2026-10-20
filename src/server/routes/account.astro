@@ -1,6 +1,6 @@
 ---
 import Layout from '../../components/Layout.astro';
-import { getSession } from '../auth';
+import { getSession, instance } from '../auth';
 import { getByUser } from '../profiles';
 import { link } from '../../lib/url';
 
@@ -17,7 +17,13 @@ const own = await getByUser(session.user.id);
 
     <section class="card">
       <p class="mono muted">Signed in as</p>
-      <p class="big">{session.user.email}</p>
+      <p class="big">{session.user.email} {session.user.emailVerified ? <span class="tag solid">Verified</span> : <span class="tag">Not verified</span>}</p>
+      {!session.user.emailVerified && instance.mail && (
+        <div class="row">
+          <button class="btn ghost" id="verify" type="button" data-email={session.user.email}>Send confirmation email</button>
+          <span class="muted" id="verify-status" aria-live="polite"></span>
+        </div>
+      )}
     </section>
 
     <section class="card">
@@ -61,6 +67,13 @@ const own = await getByUser(session.user.id);
   const post = (path: string, body: object = {}) =>
     fetch(`/api/auth/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'same-origin' });
   const home = document.querySelector<HTMLAnchorElement>('.back')!.href;
+
+  document.getElementById('verify')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    const res = await post('send-verification-email', { email: b.dataset.email, callbackURL: location.pathname });
+    document.getElementById('verify-status')!.textContent = res.ok ? 'Sent — check your inbox.' : 'Could not send. Try again in a minute.';
+  });
 
   document.getElementById('signout')!.addEventListener('click', async () => {
     await post('sign-out');

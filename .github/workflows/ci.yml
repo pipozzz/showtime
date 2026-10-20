@@ -77,11 +77,15 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U starring" --health-interval 2s --health-timeout 3s --health-retries 30
+      mail:
+        image: axllent/mailpit:v1.27
+        ports: ['1025:1025', '8025:8025']
     env:
       DATABASE_URL: postgres://starring:starring@localhost:5432/starring
       BETTER_AUTH_URL: http://localhost:4321
       SITE_URL: http://localhost:4321
       BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-000000
+      SMTP_URL: smtp://127.0.0.1:1025
       HOST: 127.0.0.1
       PORT: 4321
     steps:
@@ -101,6 +105,7 @@ jobs:
       - run: npm run test:e2e
         env:
           E2E_URL: http://localhost:4321
+          MAILPIT_URL: http://127.0.0.1:8025
       - name: Server log
         if: failure()
         run: cat server.log

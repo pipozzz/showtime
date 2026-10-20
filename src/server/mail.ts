@@ -1,0 +1,61 @@
+// Outgoing email (password reset, address verification) over any SMTP provider.
+//   SMTP_URL=smtps://user:pass@smtp.example.com:465   (Resend, Postmark, SES, Mailgun, your own…)
+//   MAIL_FROM="Starring <hello@starring.dev>"
+// Without SMTP_URL nothing is sent: in development the email is printed to the server log
+// so you can click the link; in production it's dropped with a warning.
+import nodemailer from 'nodemailer';
+
+const env = process.env;
+const transport = env.SMTP_URL ? nodemailer.createTransport(env.SMTP_URL) : null;
+const FROM = env.MAIL_FROM || 'Starring <no-reply@starring.dev>';
+
+export const mailEnabled = !!transport;
+
+interface Mail { to: string; subject: string; heading: string; body: string; action: { label: string; url: string }; footer: string }
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+/** Plain, readable HTML that survives every mail client; text part for the rest. */
+const render = ({ heading, body, action, footer }: Mail) => ({
+  text: `${heading}\n\n${body}\n\n${action.label}: ${action.url}\n\n${footer}\n\n— Starring · https://starring.dev`,
+  html: `<!doctype html><html><body style="margin:0;background:#0a0a0a;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#f2f0e9">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
+<table role="presentation" width="100%" style="max-width:520px">
+<tr><td style="font:700 13px/1 monospace;letter-spacing:3px;color:#d4ff00;padding-bottom:28px">STAR<span style="color:#f2f0e9">RING</span></td></tr>
+<tr><td style="font-size:28px;font-weight:700;line-height:1.2;padding-bottom:16px">${esc(heading)}</td></tr>
+<tr><td style="font-size:16px;line-height:1.6;color:#c9c6bd;padding-bottom:28px">${esc(body)}</td></tr>
+<tr><td style="padding-bottom:28px"><a href="${esc(action.url)}" style="display:inline-block;background:#d4ff00;color:#0a0a0a;text-decoration:none;font:700 14px monospace;letter-spacing:1px;padding:14px 22px">${esc(action.label.toUpperCase())}</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#8a877e">${esc(footer)}<br><br>If the button doesn't work, paste this into your browser:<br><span style="word-break:break-all">${esc(action.url)}</span></td></tr>
+</table></td></tr></table></body></html>`,
+});
+
+export async function sendMail(mail: Mail) {
+  const { text, html } = render(mail);
+  if (!transport) {
+    if (env.NODE_ENV !== 'production') {
+      console.log(`\n✉️  [mail not configured — dev log]\nTo: ${mail.to}\nSubject: ${mail.subject}\n${text}\n`);
+    } else {
+      console.warn(`[mail] SMTP_URL is not set — dropped "${mail.subject}" to ${mail.to}`);
+    }
+    return;
+  }
+  await transport.sendMail({ from: FROM, to: mail.to, subject: mail.subject, text, html });
+}
+
+export const resetPasswordMail = (to: string, url: string): Mail => ({
+  to,
+  subject: 'Reset your Starring password',
+  heading: 'Reset your password',
+  body: 'Someone (hopefully you) asked to reset the password for your Starring account. The link works for one hour.',
+  action: { label: 'Choose a new password', url },
+  footer: "Didn't ask for this? Ignore this email — your password stays the same.",
+});
+
+export const verifyEmailMail = (to: string, url: string): Mail => ({
+  to,
+  subject: 'Confirm your email for Starring',
+  heading: 'Confirm your email',
+  body: 'One click and your Starring account is confirmed — so you can always get back in, even if you forget your password.',
+  action: { label: 'Confirm email', url },
+  footer: "Didn't sign up for Starring? Ignore this email and no account will be confirmed.",
+});

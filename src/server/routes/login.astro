@@ -16,8 +16,10 @@ const mode = Astro.url.searchParams.get('mode') === 'signup' && canOfferSignup ?
 const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.gitlab && { id: 'gitlab', label: 'GitLab' }].filter(Boolean) as { id: string; label: string }[];
 ---
 <Layout title={mode === 'signup' ? 'Claim your stage — Starring' : 'Sign in — Starring'} fonts={['acid']} noindex>
-  <main class="auth" data-next={next} data-mode={mode}>
+  <main class="auth" data-next={next} data-mode={mode} data-verify={instance.requireVerification ? '1' : ''} data-verified={`${link('login')}?verified`}>
     <a class="mono accent back" href={link()}>← Starring</a>
+    {Astro.url.searchParams.has('reset') && <p class="notice mono">Password changed — sign in with the new one.</p>}
+    {Astro.url.searchParams.has('verified') && <p class="notice mono">Email confirmed.</p>}
     <h1 class="display">{mode === 'signup' ? <>Claim your<br /><span class="accent">stage.</span></> : <>Welcome<br /><span class="accent">back.</span></>}</h1>
 
     {social.length > 0 && (
@@ -37,6 +39,7 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
           <span class="mono">Password</span>
           <input name="password" type="password" minlength="10" required autocomplete={mode === 'signup' ? 'new-password' : 'current-password'} />
           <span class="hint signup-only">At least 10 characters.</span>
+          <a class="hint signin-only forgot" href={link('forgot-password')}>Forgot password?</a>
         </label>
         <p class="error" role="alert" hidden></p>
         <button class="btn" type="submit">{mode === 'signup' ? 'Create account →' : 'Sign in →'}</button>
@@ -84,7 +87,11 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
     show('');
     const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     btn.disabled = true;
-    const res = await api(signup ? 'sign-up/email' : 'sign-in/email', signup ? { name, email, password } : { email, password });
+    const res = await api(signup ? 'sign-up/email' : 'sign-in/email', signup ? { name, email, password, callbackURL: root.dataset.verified } : { email, password });
+    if (res.ok && signup && root.dataset.verify) {
+      form.innerHTML = `<p class="notice">Almost there — we sent a confirmation link to <b>${email.replace(/[<>&]/g, '')}</b>. Open it to finish signing up.</p>`;
+      return;
+    }
     if (res.ok) return location.assign(next);
     const data = await res.json().catch(() => ({}));
     btn.disabled = false;
@@ -108,6 +115,9 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
   .field input:focus { outline: none; border-color: var(--accent); }
   .hint { font-size: 13px; color: var(--muted); }
   [data-mode='signin'] .signup-only { display: none; }
+  [data-mode='signup'] .signin-only { display: none; }
+  .forgot { color: var(--accent); justify-self: end; }
+  .notice { color: var(--accent); }
   .error { color: #ff6b5e; }
   .btn {
     font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; font-size: 14px;
