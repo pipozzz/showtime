@@ -60,6 +60,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `GITLAB_CLIENT_ID` / `_SECRET` | none | Enables "Continue with GitLab" (scope `read_user`). Callback: `…/api/auth/callback/gitlab` |
 | `GITLAB_ISSUER` | `https://gitlab.com` | Your self-hosted GitLab URL |
 | `DATABASE_POOL_MAX` | `10` | Postgres connections per app process |
+| `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
 
 ## Security notes
 

@@ -47,6 +47,12 @@ const imageUrl = /^https?:/.test(image) ? image : new URL(link(image), site).hre
 const ld = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 // JSON-LD lives in a <script>; neutralise "</" so profile text can't close the tag.
 const ldJson = (o: object) => JSON.stringify(o).replace(/</g, '\\u003c');
+// Optional privacy-friendly analytics. Off unless PLAUSIBLE_SRC is set (build time for
+// static sites, runtime in server mode), so forks and self-hosters never report to us.
+const plausibleSrc = (() => {
+  const v = process.env.PLAUSIBLE_SRC?.trim();
+  return v && /^https:\/\/[^\s"'<>]+\.js$/.test(v) ? v : undefined;
+})();
 ---
 <!doctype html>
 <html lang="en" data-theme={themeId}>
@@ -84,6 +90,15 @@ const ldJson = (o: object) => JSON.stringify(o).replace(/</g, '\\u003c');
     <meta name="twitter:image" content={imageUrl} />
     {oembed && <link rel="alternate" type="application/json+oembed" href={oembed} title={title} />}
     {ld.map((o) => <script type="application/ld+json" set:html={ldJson(o)} />)}
+    {plausibleSrc && (
+      <>
+        <script async is:inline src={plausibleSrc}></script>
+        <script is:inline>
+          window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+          plausible.init()
+        </script>
+      </>
+    )}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href={themeFontsHref(fonts)} rel="stylesheet" />
