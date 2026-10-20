@@ -20,7 +20,7 @@ import './editor.css';
 const DRAFT_KEY = 'starring:draft:v1';
 
 const SECTIONS: { id: string; label: string; short: string; act: string; C: (p: SectionProps) => ReactElement; prefix: string[] }[] = [
-  { id: 'profile', label: 'Headliner', short: 'Hero', act: 'Hero', C: ProfileSection, prefix: ['handle', 'profile.'] },
+  { id: 'profile', label: 'Headliner', short: 'Hero', act: 'Hero', C: ProfileSection, prefix: ['handle', 'profile.', 'analytics.'] },
   { id: 'contributions', label: 'Numbers', short: 'Nums', act: 'I · V', C: NumbersSection, prefix: ['contributions.'] },
   { id: 'clients', label: 'Clients', short: 'Clnt', act: 'II', C: ClientsSection, prefix: ['clients.'] },
   { id: 'experience', label: 'Timeline', short: 'Time', act: 'III', C: ExperienceSection, prefix: ['experience.'] },

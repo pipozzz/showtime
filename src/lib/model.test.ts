@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HANDLE, RESERVED, THIS_YEAR, activityGrid, blankProfile, heatmap, totals, validate, type Profile } from './model';
+import { HANDLE, RESERVED, THIS_YEAR, activityGrid, blankProfile, heatmap, plausibleTarget, totals, validate, type Profile } from './model';
 
 const valid = (): Profile => ({
   ...blankProfile(),
@@ -70,4 +70,21 @@ test('activityGrid places real days by weekday and quantises into 4 levels', () 
   assert.deepEqual(g.slice(0, 7), [0, 0, 0, 1, 2, 3, 4]);
   assert.equal(activityGrid(activity, 2023), null);
   assert.equal(activityGrid(undefined, 2025), null);
+});
+
+test('per-profile Plausible: valid site ids and https origins only', () => {
+  const base = valid();
+  const ok = { ...base, analytics: { plausible: { domain: 'starring.dev/jane', host: 'https://plausible.example.com' } } };
+  assert.deepEqual(validate(ok), {});
+  assert.deepEqual(plausibleTarget(ok), { domain: 'starring.dev/jane', endpoint: 'https://plausible.example.com/api/event' });
+  assert.deepEqual(plausibleTarget({ ...base, analytics: { plausible: { domain: 'jane.dev' } } }), { domain: 'jane.dev', endpoint: 'https://plausible.io/api/event' });
+  for (const host of ['http://plausible.io', 'javascript:alert(1)', 'https://user:pw@evil.example', 'https://x.example/path']) {
+    const bad = { ...base, analytics: { plausible: { domain: 'jane.dev', host } } };
+    assert.ok(validate(bad)['analytics.plausible.host'], host);
+    assert.equal(plausibleTarget(bad), null, host);
+  }
+  for (const domain of ['<script>', 'not a domain', 'a.b/c/d', 'localhost']) {
+    assert.ok(validate({ ...base, analytics: { plausible: { domain } } })['analytics.plausible.domain'], domain);
+  }
+  assert.equal(plausibleTarget(base), null);
 });

@@ -52,6 +52,9 @@ const analytics = !!process.env.PLAUSIBLE_SRC;
     </>
   )}
 
+  <h2>Statistics chosen by profile owners</h2>
+  <p>A profile owner can connect <i>their own</i> Plausible account to their profile page. When you open such a page, it sends one anonymous page view (the page address and referrer) to the analytics server the owner chose. No script from that server runs on this site and no cookies are set. The owner, not us, is responsible for that analytics account.</p>
+
   <h2>Who processes data for us</h2>
   <p>{SERVER_MODE ? 'Hosting of the application and its database, and the email provider used to send account emails' : 'The static hosting provider'}{analytics ? ', and the analytics service' : ''}. They process data only on our behalf. Profile pages load fonts from Google Fonts, which receives your IP address when the page loads.</p>
 

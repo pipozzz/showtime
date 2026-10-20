@@ -1,0 +1,19 @@
+---
+// The profile owner's own Plausible: sends one page view through the Plausible Events API.
+// No third-party script runs on this origin — only this snippet, with values validated
+// by plausibleTarget() (https origin + site id) and serialized by define:vars.
+import { plausibleTarget, type Profile } from '../lib/model';
+
+interface Props { p: Profile }
+const target = plausibleTarget(Astro.props.p);
+---
+{target && (
+  <script is:inline define:vars={{ target }}>
+    fetch(target.endpoint, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ name: 'pageview', url: location.href, domain: target.domain, referrer: document.referrer || null }),
+    }).catch(() => {});
+  </script>
+)}

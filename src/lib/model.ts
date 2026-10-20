@@ -50,6 +50,8 @@ export interface Profile {
   skills?: Record<string, string[]>;
   /** Commits per day ('YYYY-MM-DD' → n) from `starring scan` or an importer; drives the real heatmap. */
   activity?: Record<string, number>;
+  /** The owner's own analytics for their profile page. */
+  analytics?: { plausible?: { domain: string; host?: string } };
 }
 
 
@@ -57,6 +59,20 @@ export const HANDLE = /^[a-z0-9][a-z0-9-]{1,38}$/;
 /** Handles that would collide with app routes. */
 export const RESERVED = ['edit', 'api', 'login', 'logout', 'settings', 'examples', 'profiles', 'assets', 'admin', 'new', 'themes', 'og', 'oembed', 'sitemap', 'robots', 'favicon', 'forgot-password', 'reset-password', 'terms', 'privacy', 'report', 'support', 'help', 'about'];
 export const THIS_YEAR = new Date().getFullYear();
+
+/** Plausible site id: a domain, optionally with one path segment (starring.dev/you). */
+export const PLAUSIBLE_DOMAIN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?:\/[a-z0-9._-]+)?$/i;
+export const isHttpsOrigin = (v: string) => {
+  try { const u = new URL(v); return u.protocol === 'https:' && !u.username && !u.password && (u.pathname === '/' || u.pathname === ''); } catch { return false; }
+};
+/** Where to send a profile's page views, or null when not configured / invalid. */
+export const plausibleTarget = (p: Profile) => {
+  const pl = p.analytics?.plausible;
+  if (!pl?.domain || !PLAUSIBLE_DOMAIN.test(pl.domain)) return null;
+  const host = pl.host?.trim() || 'https://plausible.io';
+  if (!isHttpsOrigin(host)) return null;
+  return { domain: pl.domain.toLowerCase(), endpoint: `${new URL(host).origin}/api/event` };
+};
 
 export const blankProfile = (): Profile => ({
   handle: 'your-handle',
@@ -101,6 +117,11 @@ export const validate = (p: Profile): Issues => {
   });
   p.clients?.forEach((c, i) => req(`clients.${i}.name`, c.name));
   p.education?.forEach((e, i) => req(`education.${i}.school`, e.school));
+  const pl = p.analytics?.plausible;
+  if (pl && (pl.domain || pl.host)) {
+    if (!PLAUSIBLE_DOMAIN.test(pl.domain ?? '')) out['analytics.plausible.domain'] = 'The site name from your Plausible dashboard, e.g. starring.dev/you or you.example.com';
+    if (pl.host && !isHttpsOrigin(pl.host)) out['analytics.plausible.host'] = 'An https:// address, e.g. https://plausible.io or your self-hosted Plausible';
+  }
   if (p.activity) {
     const days = Object.entries(p.activity);
     if (days.length > 40 * 366 || days.some(([d, n]) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || !Number.isInteger(n) || n < 0)) {

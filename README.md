@@ -121,6 +121,7 @@ Every profile is ready to be shared:
   - canonical URLs,
   - `sitemap.xml` and `robots.txt`,
   - `noindex` on the editor and account pages.
+- **Your own analytics:** connect your Plausible (plausible.io or self-hosted) in the editor (*Headliner → Analytics*) to see who visits your stage. Only a page view is sent through Plausible's Events API, and no third-party script runs on the page.
 - **An embeddable card** for blogs, portfolios and Notion:
 
   ```html

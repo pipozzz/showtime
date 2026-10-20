@@ -1,6 +1,7 @@
 ---
 import Layout from '../components/Layout.astro';
 import ProfileStory from '../story/ProfileStory';
+import ProfileAnalytics from '../components/ProfileAnalytics.astro';
 import { SERVER_MODE, store, type Profile } from '../lib/profiles';
 import { link, pageLink } from '../lib/url';
 import { profileDescription, profileJsonLd, profileTitle } from '../lib/seo';
@@ -37,6 +38,7 @@ const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, A
   profileName={{ first, last: rest.join(' '), username: profile.handle }}
 >
   <ProfileStory p={profile} />
+  <ProfileAnalytics p={profile} />
   <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Starring ✎</a>
   {SERVER_MODE && <a class="report-link mono" href={`${link('report')}?h=${profile.handle}`} rel="nofollow">Report</a>}
 </Layout>
