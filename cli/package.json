@@ -4,10 +4,28 @@
   "description": "Count your commits in private git repos — locally — for your Starring profile. Code, messages and repo names never leave your machine.",
   "license": "MIT",
   "type": "module",
-  "bin": { "starring": "./starring.mjs" },
-  "files": ["starring.mjs", "scan.mjs", "README.md"],
-  "engines": { "node": ">=20" },
-  "repository": { "type": "git", "url": "git+https://github.com/pipozzz/starring.git", "directory": "cli" },
+  "bin": {
+    "starring": "starring.mjs"
+  },
+  "files": [
+    "starring.mjs",
+    "scan.mjs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pipozzz/starring.git",
+    "directory": "cli"
+  },
   "homepage": "https://starring.dev",
-  "keywords": ["git", "portfolio", "resume", "contributions", "privacy"]
+  "keywords": [
+    "git",
+    "portfolio",
+    "resume",
+    "contributions",
+    "privacy"
+  ]
 }
