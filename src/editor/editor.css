@@ -229,6 +229,19 @@ a.ed-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ed-busy { position: fixed; inset: 0; z-index: 75; display: grid; place-items: center; background: #000d; font-size: clamp(40px, 8vw, 120px); animation: ed-pulse 1.2s ease-in-out infinite; }
 @keyframes ed-pulse { 50% { opacity: .55; } }
 
+/* ---------- onboarding ---------- */
+.ed-onboard .ed-modal-box { width: min(720px, 100%); }
+.ed-sources { list-style: none; display: grid; gap: 10px; margin: 6px 0 4px; }
+.ed-sources li { display: grid; grid-template-columns: 110px 1fr auto; gap: 6px 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); }
+.ed-sources li.done { border-color: var(--accent); }
+.ed-sources li.done b::after { content: ' ✓'; color: var(--accent); }
+.ed-sources li .muted { font-size: 13px; }
+.ed-sources li a { color: var(--accent); }
+.ed-sources code { font-family: var(--mono); font-size: 12px; background: var(--line); padding: 1px 4px; }
+.ed-inline { display: flex; gap: 6px; }
+.ed-inline .ed-input { width: 150px; padding: 8px 10px; }
+@media (max-width: 640px) { .ed-sources li { grid-template-columns: 1fr; } }
+
 /* ---------- overlays ---------- */
 .ed-toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;

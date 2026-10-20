@@ -22,6 +22,7 @@ const serverRoutes = () => ({
         '/login': 'src/server/routes/login.astro',
         '/account': 'src/server/routes/account.astro',
         '/oembed': 'src/server/routes/oembed.ts',
+        '/api/import/github': 'src/server/routes/import-github.ts',
       };
       for (const [pattern, entrypoint] of Object.entries(routes)) injectRoute({ pattern, entrypoint });
     },

@@ -59,12 +59,16 @@ try {
   await step('API refuses anonymous writes (401) and cross-origin writes (403)', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle, data: profile })).status, 401);
     assert.equal((await call('PUT', '/api/profile', { handle, data: profile }, { Origin: 'https://evil.example' })).status, 403);
+    assert.equal((await call('POST', '/api/import/github', {})).status, 401);
   });
   await step('sign up', async () => {
     await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Eve Tester', email, password }), 200);
     const me = await expect(await call('GET', '/api/me'), 200);
     assert.equal(me.user.email, email);
     assert.equal(me.profile, null);
+    assert.equal(me.user.githubLinked, false);
+    const gh = await call('POST', '/api/import/github', {});
+    assert.equal(gh.status, 404, 'email accounts have no GitHub token');
   });
   await step('reserved and file-owned handles are rejected', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle: 'edit', data: profile })).status, 409);

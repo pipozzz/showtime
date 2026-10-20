@@ -8,6 +8,7 @@ import { importActivity, isActivityFile } from '../lib/importers/activity';
 import { LINKEDIN_FILES, importLinkedIn, readLinkedInZip, type LinkedInFiles } from '../lib/importers/linkedin';
 import { link } from '../lib/url';
 import GithubDialog from './GithubDialog';
+import Onboarding from './Onboarding';
 import { useServer, type SyncStatus } from './useServer';
 import { getTheme, hasTheme } from '../themes';
 import {
@@ -130,6 +131,17 @@ export default function Editor({ samples }: Props) {
   const [importMode, setImportMode] = useState<'fresh' | 'merge'>('merge');
   const [gh, setGh] = useState<{ open: boolean; user?: string; error?: string; busy?: boolean }>({ open: false });
   const [notes, setNotes] = useState<string[]>([]);
+  const [onboardDismissed, setOnboardDismissed] = useState(false);
+  // A new account that only saw the sample profile starts onboarding from a blank stage
+  // (so a GitHub/LinkedIn import never merges into the sample's clients). A draft the
+  // person built before signing up is theirs and is kept.
+  const sampleReset = useRef(false);
+  useEffect(() => {
+    if (sampleReset.current || server.status !== 'unclaimed' || keepLocal || !initial.source.startsWith('Sample')) return;
+    sampleReset.current = true;
+    const b = blankProfile();
+    commit({ ...b, profile: { ...b.profile, name: server.me?.user?.name || b.profile.name } });
+  }, [server.status]);
   const [menu, setMenu] = useState<'start' | 'ready' | null>(null);
   const [dropping, setDropping] = useState(false);
   const [paneW, setPaneW] = useState(900);
@@ -471,6 +483,25 @@ export default function Editor({ samples }: Props) {
         <p className="ed-preview-cap mono muted">{frameW}px{zoom < 1 ? ` · ${Math.round(zoom * 100)}%` : ''} · click any section to edit it</p>
       </section>
 
+      {server.hosted && server.status === 'unclaimed' && !onboardDismissed && (
+        <Onboarding
+          p={p}
+          githubLinked={!!server.me?.user?.githubLinked}
+          host={location.host}
+          onImported={imported}
+          onFiles={loadFiles}
+          onSkip={() => setOnboardDismissed(true)}
+          onClaim={async (h) => {
+            commit({ ...p, handle: h });
+            const r = await server.claim(h);
+            if (r.ok) {
+              setOnboardDismissed(true);
+              notify(`${location.host}/${h} is yours — autosave is on. Publish when you're ready.`);
+            }
+            return r;
+          }}
+        />
+      )}
       {gh.open && <GithubDialog current={p} initialUser={gh.user} initialError={gh.error} onDone={imported} onClose={() => setGh({ open: false })} />}
       {gh.busy && <div className="ed-busy display" role="status">Reading GitHub<span className="accent">…</span></div>}
       {importOpen && (

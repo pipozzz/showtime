@@ -16,7 +16,7 @@ export type SyncStatus =
   | 'error';
 
 interface Me {
-  user: { id: string; name: string; email: string; image?: string | null } | null;
+  user: { id: string; name: string; email: string; image?: string | null; githubLinked?: boolean } | null;
   profile: { handle: string; published: boolean; updatedAt: string; data: Profile } | null;
   features: { allowSignup: boolean; password: boolean; github: boolean; gitlab: boolean };
 }
@@ -86,10 +86,12 @@ export function useServer(p: Profile, onRemoteProfile: (p: Profile) => void, kee
     return () => clearTimeout(t);
   }, [p, own?.handle]);
 
-  const claim = useCallback(async () => {
+  const claim = useCallback(async (handleOverride?: string) => {
+    const handle = handleOverride ?? p.handle;
+    const data = { ...p, handle };
     try {
-      const saved = await api<{ handle: string; published: boolean }>('PUT', '/api/profile', { handle: p.handle, data: p });
-      lastSent.current = JSON.stringify(p);
+      const saved = await api<{ handle: string; published: boolean }>('PUT', '/api/profile', { handle, data });
+      lastSent.current = JSON.stringify(data);
       setOwn({ handle: saved.handle, published: saved.published });
       setError('');
       setStatus('saved');
