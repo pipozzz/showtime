@@ -162,8 +162,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 **Private work, `starring scan`** ([`cli/`](cli/README.md)): this is the part GitHub can't show.
 
 ```bash
-git clone https://github.com/pipozzz/starring
-node starring/cli/starring.mjs scan ~/work ~/clients -e me@agency.com --exclude github.com
+npx starring-cli scan ~/work ~/clients -e me@agency.com --exclude github.com
 ```
 
 It counts *your* commits in local repos, including client work and a self-hosted GitLab, de-duplicated across clones. It writes only dates and counts to `starring-activity.json`: no code, messages, repo names or emails, and nothing is uploaded. Drop the file into the editor's import, and your private commits per year, platforms and a **real commits-per-day heatmap** show up on your stage.

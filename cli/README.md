@@ -2,14 +2,11 @@
 
 Count the commits **you** authored in local git repositories (client work, a company GitLab, private repos) and add them to your [Starring](https://starring.dev) profile.
 
-Run it from a clone of the repo. There's nothing to install, only Node 20+ and `git` are needed:
-
 ```bash
-git clone https://github.com/pipozzz/starring
-node starring/cli/starring.mjs scan ~/work ~/clients -e me@agency.com -e me@client.com --exclude github.com
+npx starring-cli scan ~/work ~/clients -e me@agency.com -e me@client.com --exclude github.com
 ```
 
-> **Not on npm yet.** Don't run `npx starring-cli`: that name isn't published by this project, so whatever it resolves to isn't ours.
+[![npm](https://img.shields.io/npm/v/starring-cli)](https://www.npmjs.com/package/starring-cli) There are no dependencies, and it needs Node 20+ and `git`. Prefer to read the code first? It's two small files. You can also run it from a clone: `node cli/starring.mjs scan …`.
 
 This writes `starring-activity.json`. To use it, open the editor, choose **Start from → Import YAML / JSON Resume / scan…** and drop the file in. Your profile gets:
 
