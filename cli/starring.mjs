@@ -29,7 +29,7 @@ Options
 Then open your Starring editor → Start from → Import, and drop the file in.
 
 Example
-  npx starring-cli scan ~/work ~/clients -e me@agency.com -e me@client.com --exclude github.com`;
+  node cli/starring.mjs scan ~/work ~/clients -e me@agency.com -e me@client.com --exclude github.com`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,

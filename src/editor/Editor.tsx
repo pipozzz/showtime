@@ -446,7 +446,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Import profile" onClick={(e) => e.target === e.currentTarget && setImportOpen(false)}>
           <form className="ed-modal-box" onSubmit={(e) => { e.preventDefault(); load(new FormData(e.currentTarget).get('yaml') as string, 'Imported'); }}>
             <h3 className="display">Import profile</h3>
-            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, choose a file, or drop it anywhere on the editor. Conversion stays in this browser.</p>
+            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>node cli/starring.mjs scan</code> (see the repo’s cli/README), choose a file, or drop it anywhere on the editor. Conversion stays in this browser.</p>
             <div className="ed-seg" role="radiogroup" aria-label="JSON Resume import mode">
               <label className={importMode === 'fresh' ? 'on' : ''}>
                 <input type="radio" name="resume-mode" checked={importMode === 'fresh'} onChange={() => setImportMode('fresh')} />Start fresh
