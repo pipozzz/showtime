@@ -6,6 +6,11 @@
 #   Domains tab     → Service: app, Port: 4321, HTTPS on, e.g. app.starring.dev
 # No ports are published: Dokploy attaches its Traefik network and routes the domain.
 # Postgres stays on the internal network only.
+#
+# Only ${VAR} and ${VAR:-default} are used on purpose: Nomploy translates this file to a
+# Nomad job with its own substitution, which doesn't support ${VAR:?error} or nested
+# defaults. Required: BETTER_AUTH_URL, BETTER_AUTH_SECRET, POSTGRES_PASSWORD — the app
+# refuses to start without them (see scripts/migrate.mjs).
 
 services:
   app:
@@ -23,10 +28,10 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "4321"
-      DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/starring
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public URL, e.g. https://app.starring.dev}
-      SITE_URL: ${SITE_URL:-${BETTER_AUTH_URL}}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (openssl rand -base64 32)}
+      DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD}@db:5432/starring
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      SITE_URL: ${SITE_URL:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
       SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}
       AUTH_PASSWORD: ${AUTH_PASSWORD:-true}
@@ -36,6 +41,12 @@ services:
       GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
       GITLAB_ISSUER: ${GITLAB_ISSUER:-https://gitlab.com}
       PLAUSIBLE_SRC: ${PLAUSIBLE_SRC:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4321/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
@@ -45,7 +56,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: starring
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: starring
     volumes:
       - starring-db:/var/lib/postgresql/data
