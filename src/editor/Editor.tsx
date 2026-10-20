@@ -5,6 +5,7 @@ import ProfileStory from '../story/ProfileStory';
 import { importGithub } from '../lib/importers/github';
 import { importJsonResume } from '../lib/importers/jsonresume';
 import { importActivity, isActivityFile } from '../lib/importers/activity';
+import { LINKEDIN_FILES, importLinkedIn, readLinkedInZip, type LinkedInFiles } from '../lib/importers/linkedin';
 import { link } from '../lib/url';
 import GithubDialog from './GithubDialog';
 import { useServer, type SyncStatus } from './useServer';
@@ -231,7 +232,37 @@ export default function Editor({ samples }: Props) {
       notify(`Import failed: ${(e as Error).message}`);
     }
   };
-  const loadFile = async (f: File) => load(await f.text(), `Imported ${f.name}`);
+  const loadLinkedIn = (files: LinkedInFiles, label: string) => {
+    try {
+      const result = importLinkedIn(files, { base: p });
+      imported(result.profile, result.notes, label);
+      setImportOpen(false);
+    } catch (e) {
+      notify(`Import failed: ${(e as Error).message}`);
+    }
+  };
+  /** One file (YAML / JSON / scan / LinkedIn ZIP) or several LinkedIn CSVs at once. */
+  const loadFiles = async (list: FileList | File[]) => {
+    const files = [...list];
+    const f = files[0];
+    if (!f) return;
+    if (/\.zip$/i.test(f.name)) {
+      try {
+        loadLinkedIn(readLinkedInZip(new Uint8Array(await f.arrayBuffer())), 'Imported your LinkedIn export');
+      } catch (e) {
+        notify(`Import failed: ${(e as Error).message}`);
+      }
+      return;
+    }
+    const csvs = files.filter((x) => (LINKEDIN_FILES as readonly string[]).includes(x.name));
+    if (csvs.length) {
+      const texts: LinkedInFiles = {};
+      for (const c of csvs) texts[c.name as keyof LinkedInFiles] = await c.text();
+      loadLinkedIn(texts, `Imported ${csvs.length} LinkedIn file${csvs.length > 1 ? 's' : ''}`);
+      return;
+    }
+    load(await f.text(), `Imported ${f.name}`);
+  };
   const download = () => {
     const blob = new Blob([toYaml(p)], { type: 'text/yaml' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${p.handle}.yaml` });
@@ -262,9 +293,9 @@ export default function Editor({ samples }: Props) {
     const over = (e: DragEvent) => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); setDropping(true); } };
     const leave = (e: DragEvent) => { if (!e.relatedTarget) setDropping(false); };
     const drop = (e: DragEvent) => {
-      const f = e.dataTransfer?.files?.[0];
+      const f = e.dataTransfer?.files;
       setDropping(false);
-      if (f) { e.preventDefault(); loadFile(f); }
+      if (f?.length) { e.preventDefault(); loadFiles(f); }
     };
     addEventListener('dragover', over);
     addEventListener('dragleave', leave);
@@ -299,7 +330,7 @@ export default function Editor({ samples }: Props) {
                 </button>
               ))}
               <hr />
-              <button type="button" onClick={() => { setImportOpen(true); setMenu(null); }}>Import YAML / JSON Resume / scan…</button>
+              <button type="button" onClick={() => { setImportOpen(true); setMenu(null); }}>Import YAML / LinkedIn / JSON Resume / scan…</button>
             </div>
           )}
         </div>
@@ -446,7 +477,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Import profile" onClick={(e) => e.target === e.currentTarget && setImportOpen(false)}>
           <form className="ed-modal-box" onSubmit={(e) => { e.preventDefault(); load(new FormData(e.currentTarget).get('yaml') as string, 'Imported'); }}>
             <h3 className="display">Import profile</h3>
-            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, choose a file, or drop it anywhere on the editor. Conversion stays in this browser.</p>
+            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, or choose or drop your <b>LinkedIn data export</b> ZIP (Settings → Data privacy → Get a copy of your data). Only profile, positions, education, skills and projects are read; messages and connections are never opened. Conversion stays in this browser.</p>
             <div className="ed-seg" role="radiogroup" aria-label="JSON Resume import mode">
               <label className={importMode === 'fresh' ? 'on' : ''}>
                 <input type="radio" name="resume-mode" checked={importMode === 'fresh'} onChange={() => setImportMode('fresh')} />Start fresh
@@ -466,9 +497,9 @@ export default function Editor({ samples }: Props) {
           </form>
         </div>
       )}
-      <input ref={fileInput} type="file" accept=".yaml,.yml,.json" hidden onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])} />
+      <input ref={fileInput} type="file" accept=".yaml,.yml,.json,.zip,.csv" multiple hidden onChange={(e) => e.target.files?.length && loadFiles(e.target.files)} />
 
-      {dropping && <div className="ed-drop display">Drop your YAML, JSON Resume or scan</div>}
+      {dropping && <div className="ed-drop display">Drop your YAML, LinkedIn ZIP, JSON Resume or scan</div>}
 
       {toast && (
         <div className="ed-toast mono" role="status" key={toast.id}>
