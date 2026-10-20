@@ -1,0 +1,22 @@
+name: Theme proposal
+description: Propose (and ideally build) a new theme
+labels: [theme, good first issue]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Theme name and id
+      placeholder: Film Noir — noir
+    validations: { required: true }
+  - type: textarea
+    id: mood
+    attributes:
+      label: Mood, colours and fonts
+      description: Links to references or a quick mockup help a lot.
+    validations: { required: true }
+  - type: checkboxes
+    id: build
+    attributes:
+      label: Building it?
+      options:
+        - label: I'd like to build this theme myself (`npm run new:theme -- <id>`)

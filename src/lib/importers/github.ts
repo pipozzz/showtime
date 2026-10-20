@@ -116,7 +116,7 @@ const toProject = (r: GhRepo): Project => {
 };
 
 export const usernameFrom = (input: string) =>
-  input.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?github\.com\//i, '').split(/[/?#]/)[0];
+  input.trim().replace(/^@/, '').replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '').split(/[/?#]/)[0];
 
 export async function importGithub(input: string, opts: { token?: string; base?: Profile } = {}): Promise<GithubImport> {
   const login = usernameFrom(input);

@@ -1,0 +1,24 @@
+name: Bug
+description: Something renders or behaves wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations: { required: true }
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options: [Static (GitHub Pages / YAML), Server (self-hosted with accounts), Live demo]
+    validations: { required: true }
+  - type: textarea
+    id: yaml
+    attributes:
+      label: Profile YAML that reproduces it (fictional data is fine)
+      render: yaml
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS / screen size

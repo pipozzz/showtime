@@ -4,6 +4,7 @@ import ProfileStory from '../story/ProfileStory';
 import { SERVER_MODE, store, type Profile } from '../lib/profiles';
 import { link, pageLink } from '../lib/url';
 import { profileDescription, profileJsonLd, profileTitle } from '../lib/seo';
+import { publicBase } from '../lib/site';
 
 // Static mode: one page per YAML profile at build time.
 // Server mode: rendered on request, so new and edited DB profiles show up instantly.
@@ -18,10 +19,10 @@ if (SERVER_MODE) {
   Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
 }
 const profile = p!;
-const url = new URL(pageLink(profile.handle), Astro.site ?? Astro.url.origin).href;
-const image = new URL(link(`og/${profile.handle}.png`), Astro.site ?? Astro.url.origin).href;
+const url = new URL(pageLink(profile.handle), publicBase(Astro.site, Astro.url)).href;
+const image = new URL(link(`og/${profile.handle}.png`), publicBase(Astro.site, Astro.url)).href;
 const [first, ...rest] = profile.profile.name.split(' ');
-const oembed = SERVER_MODE ? `${new URL(link('oembed'), Astro.site ?? Astro.url.origin).href}?url=${encodeURIComponent(url)}&format=json` : undefined;
+const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, Astro.url)).href}?url=${encodeURIComponent(url)}&format=json` : undefined;
 ---
 <Layout
   title={profileTitle(profile)}

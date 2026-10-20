@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { themesCss, themeFontsHref, getTheme } from '../themes';
 import { link } from '../lib/url';
+import { publicBase } from '../lib/site';
 
 interface Props {
   title: string;
@@ -40,7 +41,7 @@ const {
   profileName,
 } = Astro.props;
 const themeId = getTheme(theme).id;
-const site = Astro.site ?? new URL(Astro.url.origin);
+const site = publicBase(Astro.site, Astro.url);
 const canonical = new URL(Astro.url.pathname.replace(/\/?$/, '/'), site).href;
 const imageUrl = /^https?:/.test(image) ? image : new URL(link(image), site).href;
 const ld = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];

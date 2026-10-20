@@ -3,7 +3,8 @@
 // Self-contained (no layout chrome), opens the full stage in the top window.
 import { SERVER_MODE, store, totals, type Profile } from '../../lib/profiles';
 import { getTheme, themesCss, themeFontsHref } from '../../themes';
-import { link, pageLink } from '../../lib/url';
+import { pageLink } from '../../lib/url';
+import { publicBase } from '../../lib/site';
 
 export async function getStaticPaths() {
   return (await store.list()).map((p) => ({ params: { handle: p.handle }, props: { p } }));
@@ -20,7 +21,7 @@ const profile = p!;
 const t = totals(profile);
 const theme = getTheme(profile.theme);
 const [first, ...rest] = profile.profile.name.split(' ');
-const stage = new URL(pageLink(profile.handle), Astro.site ?? Astro.url.origin).href;
+const stage = new URL(pageLink(profile.handle), publicBase(Astro.site, Astro.url)).href;
 const stats = [
   t.years > 0 && [t.years, 'years'],
   t.all > 0 && [t.all.toLocaleString('en'), 'commits'],

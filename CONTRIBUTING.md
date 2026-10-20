@@ -16,11 +16,34 @@ Requires Node 22.22 or newer. There's no database and no environment variables. 
 Before opening a PR, run:
 
 ```bash
-npm run build                      # must pass
-BASE_PATH=/showtime npm run build  # must pass too: catches hard-coded "/" links
+npm run check          # types for .astro / .ts / .tsx
+npm test               # unit tests (node --test)
+npm run check:themes   # theme id, WCAG contrast, scoped CSS
+npm run build          # static build
 ```
 
-CI runs both.
+Touching server mode (`src/server/`, auth, the DB)? Also run:
+
+```bash
+npm run db:up && export DATABASE_URL=postgres://showtime:showtime@127.0.0.1:5440/showtime
+npm run db:migrate && npm run build:server
+node dist/server/entry.mjs &   # then:
+npm run test:e2e               # sign-up → claim → save → publish → delete, plus security guards
+```
+
+### What CI runs on your PR
+
+| Job | What it checks |
+| --- | --- |
+| `check` | `astro check` (types), theme lint, no whitespace errors |
+| `test` | Unit tests: model, SEO/JSON-LD, GitHub and JSON Resume importers |
+| `build` | Static build, static build under `/showtime` (catches hard-coded links), server build |
+| `e2e` | Server build against Postgres. Migrations must be committed, then the full account → publish flow runs |
+| `docker` | The self-hosting image builds |
+
+All five must pass before a PR can merge into `main`. On your first PR, a maintainer approves the workflow run first (GitHub's protection for forks).
+
+Tests live next to the code (`*.test.ts`) and run with Node's built-in test runner. New importer? Add a test with a mocked `fetch`, as `src/lib/importers/github.test.ts` does.
 
 ## Where things live
 

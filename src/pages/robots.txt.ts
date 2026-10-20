@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 import { link } from '../lib/url';
+import { publicBase } from '../lib/site';
 
 export const GET: APIRoute = ({ site, url }) => {
-  const base = site ?? new URL(url.origin);
+  const base = publicBase(site, url);
   const body = `User-agent: *
 Allow: /
 Disallow: ${link('edit')}

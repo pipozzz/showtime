@@ -5,20 +5,109 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  check:
+    name: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+        with: { node-version: 22, cache: npm }
       - run: npm ci
-      - run: npm run build
-      # Same build under a project-pages base path, to catch hard-coded "/" links.
-      - run: npm run build
+      - name: Types (astro check — .astro, .ts, .tsx)
+        run: npm run check
+      - name: Themes (id, WCAG contrast, scoped CSS)
+        run: npm run check:themes
+      - name: No whitespace errors
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin ${{ github.base_ref }} && git diff --check origin/${{ github.base_ref }} HEAD
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Static build
+        run: npm run build
+      - name: Static build under a project-pages base path (catches hard-coded "/" links)
+        run: npm run build
         env:
           BASE_PATH: /showtime
-      # Server mode (accounts + Postgres) must build too; no DB needed to build.
+          SITE_URL: https://example.github.io
+      - name: Server build
+        run: npm run build:server
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: showtime
+          POSTGRES_PASSWORD: showtime
+          POSTGRES_DB: showtime
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U showtime" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgres://showtime:showtime@localhost:5432/showtime
+      BETTER_AUTH_URL: http://localhost:4321
+      SITE_URL: http://localhost:4321
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-000000
+      HOST: 127.0.0.1
+      PORT: 4321
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
       - run: npm run build:server
+      - run: npm run db:migrate
+      - name: Migrations are committed (schema.ts and drizzle/ in sync)
+        run: npx drizzle-kit generate --name ci-check && git diff --exit-code --stat -- drizzle/ && test -z "$(git status --porcelain drizzle/)"
+      - name: Start server
+        run: |
+          node dist/server/entry.mjs > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4321/ >/dev/null && exit 0; sleep 1; done
+          cat server.log; exit 1
+      - run: npm run test:e2e
+        env:
+          E2E_URL: http://localhost:4321
+      - name: Server log
+        if: failure()
+        run: cat server.log
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: showtime:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

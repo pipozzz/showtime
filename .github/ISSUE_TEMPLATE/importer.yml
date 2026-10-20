@@ -1,0 +1,19 @@
+name: Importer request
+description: Import profile data from another source
+labels: [importer]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      placeholder: Bitbucket, Gitea, LinkedIn export, …
+    validations: { required: true }
+  - type: textarea
+    id: data
+    attributes:
+      label: What should map to which Showtime fields?
+    validations: { required: true }
+  - type: textarea
+    id: api
+    attributes:
+      label: API / export format docs

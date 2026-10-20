@@ -4,11 +4,12 @@ import type { APIRoute } from 'astro';
 import { store } from '../../lib/profiles';
 import { link, pageLink } from '../../lib/url';
 import { fail, json } from '../http';
+import { publicBase } from '../../lib/site';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url, site }) => {
-  const base = site ?? new URL(url.origin);
+  const base = publicBase(site, url);
   const target = url.searchParams.get('url');
   if (!target) return fail(400, 'url is required');
   if ((url.searchParams.get('format') ?? 'json') !== 'json') return new Response('Only JSON', { status: 501 });

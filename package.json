@@ -10,13 +10,16 @@
     "build": "astro build",
     "preview": "astro preview",
     "new:theme": "node scripts/new-theme.mjs",
-    "test": "node --test src/lib/importers/*.test.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "dev:server": "SHOWTIME_MODE=server astro dev",
     "build:server": "SHOWTIME_MODE=server astro build",
     "start": "node scripts/migrate.mjs && node dist/server/entry.mjs",
     "db:up": "docker compose -f docker-compose.dev.yml up -d --wait",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "check": "astro check",
+    "check:themes": "node scripts/check-themes.mjs",
+    "test:e2e": "node scripts/e2e.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.9",
@@ -40,7 +43,10 @@
     "node": ">=22.22.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.11",
     "@types/node": "^22.20.5",
-    "drizzle-kit": "^0.31.11"
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
   }
 }

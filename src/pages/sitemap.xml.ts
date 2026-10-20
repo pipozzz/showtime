@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { store } from '../lib/profiles';
 import { pageLink } from '../lib/url';
+import { publicBase } from '../lib/site';
 
 // Static mode: written at build time. Server mode: rendered per request, so new
 // published profiles appear without a rebuild.
 export const GET: APIRoute = async ({ site, url }) => {
-  const base = site ?? new URL(url.origin);
+  const base = publicBase(site, url);
   const abs = (path: string) => new URL(pageLink(path), base).href;
   const mode = await store.mode();
   const profiles = await store.list();
