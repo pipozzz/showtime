@@ -35,7 +35,7 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
           # optional analytics: set the repo variable PLAUSIBLE_SRC (Settings → Secrets and variables → Actions → Variables)
           PLAUSIBLE_SRC: ${{ vars.PLAUSIBLE_SRC }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
