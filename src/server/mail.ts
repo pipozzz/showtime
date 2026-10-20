@@ -1,12 +1,31 @@
-// Outgoing email (password reset, address verification) over any SMTP provider.
-//   SMTP_URL=smtps://user:pass@smtp.example.com:465   (Resend, Postmark, SES, Mailgun, your own…)
+// Outgoing email (password reset, address verification) with nodemailer over any SMTP
+// server — your own (Postfix, Mailcow…), your mailbox provider (Google Workspace, Zoho,
+// Fastmail…) or a sending service. Configure either:
+//   SMTP_HOST=mail.example.com  SMTP_PORT=587  SMTP_USER=…  SMTP_PASS=…  [SMTP_SECURE=true for 465]
+// or one URL:  SMTP_URL=smtps://user:pass@mail.example.com:465
 //   MAIL_FROM="Starring <hello@starring.dev>"
-// Without SMTP_URL nothing is sent: in development the email is printed to the server log
+// Without either, nothing is sent: in development the email is printed to the server log
 // so you can click the link; in production it's dropped with a warning.
 import nodemailer from 'nodemailer';
 
 const env = process.env;
-const transport = env.SMTP_URL ? nodemailer.createTransport(env.SMTP_URL) : null;
+
+/** nodemailer transport options from SMTP_* variables (SMTP_URL wins if both are set). */
+export const smtpConfig = (e: NodeJS.ProcessEnv = env) => {
+  if (e.SMTP_URL?.trim()) return e.SMTP_URL.trim();
+  if (!e.SMTP_HOST?.trim()) return null;
+  const port = Number(e.SMTP_PORT) || 587;
+  return {
+    host: e.SMTP_HOST.trim(),
+    port,
+    // implicit TLS on 465; otherwise STARTTLS is negotiated when the server offers it
+    secure: e.SMTP_SECURE ? /^(1|true|yes)$/i.test(e.SMTP_SECURE) : port === 465,
+    ...(e.SMTP_USER && { auth: { user: e.SMTP_USER, pass: e.SMTP_PASS ?? '' } }),
+  };
+};
+
+const config = smtpConfig();
+const transport = config ? nodemailer.createTransport(config) : null;
 const FROM = env.MAIL_FROM || 'Starring <no-reply@starring.dev>';
 
 export const mailEnabled = !!transport;
@@ -35,7 +54,7 @@ export async function sendMail(mail: Mail) {
     if (env.NODE_ENV !== 'production') {
       console.log(`\n✉️  [mail not configured — dev log]\nTo: ${mail.to}\nSubject: ${mail.subject}\n${text}\n`);
     } else {
-      console.warn(`[mail] SMTP_URL is not set — dropped "${mail.subject}" to ${mail.to}`);
+      console.warn(`[mail] SMTP is not configured (SMTP_HOST or SMTP_URL) — dropped "${mail.subject}" to ${mail.to}`);
     }
     return;
   }

@@ -43,6 +43,11 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
    # optional
    STARRING_IMAGE_TAG=latest  # or sha-1a2b3c4 to pin a build
    PLAUSIBLE_SRC=
+   SMTP_HOST=                 # mail.example.com — for password reset emails
+   SMTP_PORT=587
+   SMTP_USER=
+   SMTP_PASS=
+   MAIL_FROM=Starring <hello@starring.dev>
    GITHUB_CLIENT_ID=
    GITHUB_CLIENT_SECRET=
    ```
@@ -79,7 +84,9 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `GITLAB_CLIENT_ID` / `_SECRET` | none | Enables "Continue with GitLab" (scope `read_user`). Callback: `…/api/auth/callback/gitlab` |
 | `GITLAB_ISSUER` | `https://gitlab.com` | Your self-hosted GitLab URL |
 | `DATABASE_POOL_MAX` | `10` | Postgres connections per app process |
-| `SMTP_URL` | none | Outgoing mail for password reset and address verification, e.g. `smtps://user:pass@smtp.resend.com:465`. Without it nothing is sent: in development the reset link is printed to the server log. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | none / `587` | Outgoing mail for password reset and address verification, sent with nodemailer through any SMTP server: your own (Postfix, Mailcow…), Google Workspace, Zoho, Fastmail or your hosting's mailbox. Without `SMTP_HOST` nothing is sent; in development the reset link is printed to the server log. |
+| `SMTP_SECURE` | auto | `true` for implicit TLS (port 465). Otherwise STARTTLS is used when the server offers it. |
+| `SMTP_URL` | none | Alternative to the above as one URL, e.g. `smtps://user:pass@mail.example.com:465`. Special characters in the password must be URL-encoded. |
 | `MAIL_FROM` | `Starring <no-reply@starring.dev>` | Sender address. Use a domain your provider has verified (SPF/DKIM). |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | `true` blocks sign-in until the address is confirmed. Needs `SMTP_URL`. |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
@@ -92,7 +99,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 - Profiles are validated on the server (same rules as the editor) and capped at 200 KB.
 - Unpublished profiles return 404 to everyone, including search engines.
 - Users can delete their account from `/account`, which also deletes their profile.
-- **Email:** with `SMTP_URL` set, there's "Forgot password?" (single-use link, valid 1 hour, signs out every other session) and a confirmation email on sign-up. `REQUIRE_EMAIL_VERIFICATION=true` makes that confirmation mandatory. The reset form answers the same way whether or not an account exists, so it can't be used to probe for addresses.
+- **Email:** with `SMTP_HOST` (or `SMTP_URL`) set, there's "Forgot password?" (single-use link, valid 1 hour, signs out every other session) and a confirmation email on sign-up. `REQUIRE_EMAIL_VERIFICATION=true` makes that confirmation mandatory. The reset form answers the same way whether or not an account exists, so it can't be used to probe for addresses.
 
 ## Local development in server mode
 
@@ -101,7 +108,7 @@ npm run db:up                                                     # Postgres on 
 export DATABASE_URL=postgres://starring:starring@127.0.0.1:5440/starring
 npm run db:migrate
 npm run dev:server                                                # http://localhost:4321
-# email: npm run db:up also starts Mailpit → SMTP_URL=smtp://127.0.0.1:1025, inbox at http://localhost:8025
+# email: npm run db:up also starts Mailpit → SMTP_HOST=127.0.0.1 SMTP_PORT=1025, inbox at http://localhost:8025
 ```
 
 After you change `src/server/db/schema.ts`, run `npm run db:generate` and commit the new file in `drizzle/`.
