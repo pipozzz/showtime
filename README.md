@@ -70,7 +70,7 @@ cp .env.example .env   # set BETTER_AUTH_URL, BETTER_AUTH_SECRET, POSTGRES_PASSW
 docker compose up -d
 ```
 
-You get email + password sign-up (GitHub and GitLab sign-in optional), autosave to the database, publish and unpublish, account deletion, and an `ALLOW_SIGNUP=false` switch for private instances. The editor and the scroll story are the same as in static mode.
+You get email + password sign-up (GitHub and GitLab sign-in optional), password reset and address confirmation over your own SMTP server ([email setup](docs/self-hosting.md#email-smtp)), autosave to the database, publish and unpublish, account deletion, and an `ALLOW_SIGNUP=false` switch for private instances. The editor and the scroll story are the same as in static mode.
 
 For Dokploy, plain Node and all the settings, see **[docs/self-hosting.md](docs/self-hosting.md)**.
 

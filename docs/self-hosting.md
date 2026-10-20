@@ -58,6 +58,57 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
 
 To build on the server instead of pulling (for example from a fork without CI), replace `image:` and `pull_policy:` in the compose file with `build: .`.
 
+## Email (SMTP)
+
+Starring sends two kinds of email: **password reset** links and **address confirmation** after sign-up. It uses [nodemailer](https://nodemailer.com) with any SMTP server you already have, with no vendor lock-in.
+
+```env
+SMTP_HOST=mail.example.com
+SMTP_PORT=587                 # 465 = implicit TLS (set automatically), 587 = STARTTLS
+SMTP_USER=hello@example.com
+SMTP_PASS=your-password       # any characters, no encoding needed
+MAIL_FROM=Starring <hello@example.com>
+# REQUIRE_EMAIL_VERIFICATION=true   # optional: no sign-in until the address is confirmed
+```
+
+Restart or redeploy after changing these. With no `SMTP_HOST`, nothing is sent: in development the link is printed to the server log, and in production a warning is logged.
+
+### Common servers
+
+| Server | `SMTP_HOST` | `SMTP_PORT` | Notes |
+| --- | --- | --- | --- |
+| Your own Postfix / Mailcow / Mailu | your mail host | 587 or 465 | Use a mailbox (or relay user) that is allowed to send as `MAIL_FROM` |
+| Google Workspace / Gmail | `smtp.gmail.com` | 465 | Turn on 2-step verification and use an **App password** as `SMTP_PASS` |
+| Microsoft 365 | `smtp.office365.com` | 587 | SMTP AUTH must be enabled for the mailbox |
+| Zoho Mail | `smtp.zoho.eu` (or `.com`) | 465 | App-specific password if 2FA is on |
+| Fastmail | `smtp.fastmail.com` | 465 | App password |
+| A hosting mailbox (Websupport, Hetzner, …) | from your provider | 465 / 587 | Usually the mailbox address and password |
+
+`SMTP_URL=smtps://user:pass@host:465` also works as a one-line alternative. If both are set, `SMTP_URL` wins. Special characters in the password must then be URL-encoded.
+
+### Deliverability (keep it out of spam)
+
+`MAIL_FROM` must be on a domain your SMTP server is allowed to send for. Add these records in DNS (e.g. Cloudflare):
+
+- **SPF:** a `TXT` record on the domain that includes your mail server or provider, e.g. `v=spf1 include:_spf.google.com ~all` for Google, or `v=spf1 mx ~all` for your own server.
+- **DKIM:** the `TXT` record your mail server or provider generates (Mailcow: *Configuration → ARC/DKIM keys*; Google: Admin → Gmail → Authenticate email).
+- **DMARC:** start with `_dmarc` `TXT` `v=DMARC1; p=none; rua=mailto:you@example.com`, then tighten to `quarantine` once reports look clean.
+
+Check the result with [mail-tester.com](https://www.mail-tester.com): send yourself a reset email there.
+
+### Testing locally
+
+`npm run db:up` also starts **Mailpit**, which catches all mail: `SMTP_HOST=127.0.0.1 SMTP_PORT=1025`, inbox at http://localhost:8025. CI uses the same setup, and `npm run test:e2e` with `MAILPIT_URL=http://127.0.0.1:8025` runs the full reset flow through a real email.
+
+### Troubleshooting
+
+| Symptom | Likely cause |
+| --- | --- |
+| `Invalid login` / `535` | Wrong user or password, or the provider needs an app password |
+| `self signed certificate` / TLS errors | Wrong port/TLS pair: 465 needs implicit TLS, 587 needs STARTTLS. Set `SMTP_SECURE` explicitly |
+| Mail arrives in spam | Missing SPF/DKIM/DMARC, or `MAIL_FROM` on a domain the server can't send for |
+| Nothing arrives, no error | `SMTP_HOST` not set in the running container. Check the log for `SMTP is not configured` |
+
 ## Plain Node
 
 ```bash
