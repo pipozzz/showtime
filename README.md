@@ -167,6 +167,8 @@ npx starring-cli scan ~/work ~/clients -e me@agency.com --exclude github.com
 
 It counts *your* commits in local repos, including client work and a self-hosted GitLab, de-duplicated across clones. It writes only dates and counts to `starring-activity.json`: no code, messages, repo names or emails, and nothing is uploaded. Drop the file into the editor's import, and your private commits per year, platforms and a **real commits-per-day heatmap** show up on your stage.
 
+**LinkedIn:** request your data export (LinkedIn → Settings → Data privacy → *Get a copy of your data*, pick Profile, Positions, Education, Skills). Then drop the ZIP into the editor's import to fill your name, role, career timeline, education and skills. It happens entirely in your browser, and only those profile files are read: messages and connections are never opened.
+
 **JSON Resume:** paste or drop a `resume.json` into the import dialog to fill your timeline, education, skills and projects. Contributed by @dailyun.
 
 **Planned:** GitLab (including self-hosted), Bitbucket and Gitea importers.
