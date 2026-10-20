@@ -1,4 +1,4 @@
-# Showtime profile — one file = one stage.
+# Starring profile — one file = one stage.
 # Everything here is sample data. Company names are fictional.
 handle: nova
 theme: acid          # acid | blood | ice
@@ -17,7 +17,7 @@ profile:
 
 # Contributions per year. `public` is what the world can see,
 # `private` is self-reported work in client or company repos.
-# `verified` = imported by a Showtime importer (counts/dates only, no code).
+# `verified` = imported by a Starring importer (counts/dates only, no code).
 contributions:
   - { year: 2019, public: 310, private: 1480, verified: true }
   - { year: 2020, public: 420, private: 1720, verified: true }

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/screenshots/hero.png" alt="A Showtime profile: a huge two-tone name, role and tagline on a black stage" width="100%" />
+  <img src="docs/screenshots/hero.png" alt="A Starring profile: a huge two-tone name, role and tagline on a black stage" width="100%" />
 </p>
 
-<h1 align="center">Showtime</h1>
+<h1 align="center"><img src="public/brand/logo.svg" alt="Starring" height="72" /></h1>
 
 <p align="center">
   <b>Your developer career as a scroll story, including the work GitHub can't show.</b><br />
@@ -10,10 +10,10 @@
 </p>
 
 <p align="center">
-  <a href="https://pipozzz.github.io/showtime/"><b>Live demo</b></a> ·
-  <a href="https://pipozzz.github.io/showtime/edit"><b>Try the editor</b></a> ·
-  <a href="https://github.com/pipozzz/showtime/generate"><b>Use this template</b></a> ·
-  <a href="#your-own-showtime-site-in-5-minutes">5-minute setup</a> ·
+  <a href="https://pipozzz.github.io/starring/"><b>Live demo</b></a> ·
+  <a href="https://pipozzz.github.io/starring/edit"><b>Try the editor</b></a> ·
+  <a href="https://github.com/pipozzz/starring/generate"><b>Use this template</b></a> ·
+  <a href="#your-own-starring-site-in-5-minutes">5-minute setup</a> ·
   <a href="#contributing">Contribute</a>
 </p>
 
@@ -21,7 +21,7 @@
 
 Most working developers' best code sits in private repos: client projects, the agency's self-hosted GitLab, work under NDA. Your GitHub profile shows only the small public part.
 
-**Showtime shows the whole career on one page.** It covers the clients you can name, the projects you can't show, your public repos, school and stack, and it's designed so people remember it.
+**Starring shows the whole career on one page.** It covers the clients you can name, the projects you can't show, your public repos, school and stack, and it's designed so people remember it.
 
 <table>
   <tr>
@@ -34,7 +34,7 @@ Most working developers' best code sits in private repos: client projects, the a
   </tr>
 </table>
 
-> **Try it now:** open the [live demo](https://pipozzz.github.io/showtime/) and type your GitHub username, or browse the sample profiles [Nova](https://pipozzz.github.io/showtime/nova/) and [Milo](https://pipozzz.github.io/showtime/milo/). Nothing is stored on a server.
+> **Try it now:** open the [live demo](https://pipozzz.github.io/starring/) and type your GitHub username, or browse the sample profiles [Nova](https://pipozzz.github.io/starring/nova/) and [Milo](https://pipozzz.github.io/starring/milo/). Nothing is stored on a server.
 
 ## What you get
 
@@ -47,13 +47,13 @@ Most working developers' best code sits in private repos: client projects, the a
 - **Static and fast.** Built with Astro and no client JS on profile pages. It deploys to GitHub Pages with the included workflow.
 
 <p align="center">
-  <img src="docs/screenshots/editor.png" alt="The Showtime editor: section list, form fields and a live preview of the profile" width="100%" />
+  <img src="docs/screenshots/editor.png" alt="The Starring editor: section list, form fields and a live preview of the profile" width="100%" />
 </p>
 
-## Your own Showtime site in 5 minutes
+## Your own Starring site in 5 minutes
 
-1. Click **[Use this template](https://github.com/pipozzz/showtime/generate)** to create your own repo.
-2. Open the editor: use the [hosted one](https://pipozzz.github.io/showtime/edit), or run it locally with `npm install && npm run dev` and open **`/edit`**.
+1. Click **[Use this template](https://github.com/pipozzz/starring/generate)** to create your own repo.
+2. Open the editor: use the [hosted one](https://pipozzz.github.io/starring/edit), or run it locally with `npm install && npm run dev` and open **`/edit`**.
 3. Choose **Start from → GitHub profile** to get an instant draft. Then add the parts GitHub can't see: clients, NDA projects, your timeline, school.
 4. Press **Export .yaml** (⌘S) and save the file as **`profiles/<your-handle>.yaml`**. With exactly one file in `profiles/`, your profile becomes the home page.
 5. In your repo, open **Settings → Pages → Build and deployment** and set **Source: GitHub Actions**.
@@ -63,7 +63,7 @@ The Pages workflow reads the correct `site` and `base` from GitHub, so project p
 
 ## Self-host it with accounts
 
-Want a Showtime instance where people **sign up, claim a handle and publish** without touching git? Run it in server mode with Postgres:
+Want a Starring instance where people **sign up, claim a handle and publish** without touching git? Run it in server mode with Postgres:
 
 ```bash
 cp .env.example .env   # set BETTER_AUTH_URL, BETTER_AUTH_SECRET, POSTGRES_PASSWORD
@@ -131,7 +131,7 @@ Every profile is ready to be shared:
 
 ## Themes
 
-Six themes ship today: **Acid**, **Blood**, **Ice**, **Paper** (light, editorial serif), **VHS** (scanlines and chromatic edges) and **Broadway** (gold marquee bulbs). You can browse them in the [theme gallery](https://pipozzz.github.io/showtime/themes) or try one in the editor.
+Six themes ship today: **Acid**, **Blood**, **Ice**, **Paper** (light, editorial serif), **VHS** (scanlines and chromatic edges) and **Broadway** (gold marquee bulbs). You can browse them in the [theme gallery](https://pipozzz.github.io/starring/themes) or try one in the editor.
 
 <p align="center"><img src="docs/screenshots/themes.png" alt="Theme gallery: Broadway with marquee bulbs, Ice, Paper in italic serif, and VHS with scanlines" width="100%" /></p>
 
@@ -162,7 +162,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 **Planned:**
 - GitLab, including self-hosted, Bitbucket and Gitea.
 - JSON Resume.
-- `npx showtime scan ~/work`, a local CLI that counts *your* commits in private repos and keeps only dates and counts. Code, messages and repo names never leave your machine.
+- `npx starring scan ~/work`, a local CLI that counts *your* commits in private repos and keeps only dates and counts. Code, messages and repo names never leave your machine.
 
 ## Roadmap
 
@@ -173,7 +173,7 @@ Open `/edit`, `/edit?new` for a blank profile, `/edit?from=<handle>` to edit an 
 - [x] Theme plugins (`src/themes/<id>`) and a theme gallery
 - [x] Movie-poster Open Graph image per profile, JSON-LD, sitemap, embeddable card + oEmbed
 - [ ] GitLab / Bitbucket / Gitea importers
-- [ ] Local `showtime scan` CLI for private repos
+- [ ] Local `starring scan` CLI for private repos
 - [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish
 
 ### Architecture
@@ -202,7 +202,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and conventions. Issues labelle
 
 ## A note on client names
 
-Saying you worked on a project for a company is usually fine. Showing its logo or describing internals can breach an NDA or trademark rules. Showtime renders client names as text only, and the `nda` flag removes links and details. Check your contracts.
+Saying you worked on a project for a company is usually fine. Showing its logo or describing internals can breach an NDA or trademark rules. Starring renders client names as text only, and the `nda` flag removes links and details. Check your contracts.
+
+## Brand
+
+The mark is a star breaking out of a ring (STAR + RING), because your work is bigger than the circle GitHub can see. You'll find the assets in [`public/brand/`](public/brand/) (`logo.svg`, `logo-light.svg`, `mark.svg`, `app-icon.png`) and the [brand sheet](docs/brand/sheet.png). Run `npm run brand` to regenerate them.
 
 ## License
 

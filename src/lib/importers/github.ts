@@ -1,4 +1,4 @@
-// GitHub importer: public profile + repos → a Showtime draft.
+// GitHub importer: public profile + repos → a Starring draft.
 // Runs in the browser (and in Node 18+). Talks only to api.github.com.
 //
 // Without a token: public REST data (60 requests/hour per IP — we use 2).

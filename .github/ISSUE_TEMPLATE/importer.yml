@@ -11,7 +11,7 @@ body:
   - type: textarea
     id: data
     attributes:
-      label: What should map to which Showtime fields?
+      label: What should map to which Starring fields?
     validations: { required: true }
   - type: textarea
     id: api

@@ -21,7 +21,7 @@ if (SERVER_MODE) {
   <ProfileStory p={me} />
 </Layout>
 ) : (
-<Layout title="Showtime — your developer career as a scroll story" description="Your developer career as a scroll story — including the client work and NDA projects GitHub can't show. Open source, free on GitHub Pages or self-hosted." jsonLd={siteJsonLd(new URL(link(), base).href)}>
+<Layout title="Starring — your developer career as a scroll story" description="Your developer career as a scroll story — including the client work and NDA projects GitHub can't show. Open source, free on GitHub Pages or self-hosted." jsonLd={siteJsonLd(new URL(link(), base).href)}>
   {SERVER_MODE && (
     <nav class="top mono">
       {signedIn
@@ -30,10 +30,10 @@ if (SERVER_MODE) {
     </nav>
   )}
   <header class="landing">
-    <p class="mono accent">Open source · v0.1 prototype</p>
-    <h1 class="display">Show<br />time<span class="accent">.</span></h1>
+    <p class="mono accent brandline"><img src={link('brand/logo.svg')} alt="Starring" height="34" /><span>Open source · v0.1</span></p>
+    <h1 class="display">Now<br /><span class="accent">starring</span></h1>
     <p class="pitch">
-      Your GitHub shows the tip of the iceberg. Showtime shows the whole career —
+      Your GitHub shows the tip of the iceberg. Starring shows the whole career —
       the client work under NDA, the self-hosted GitLab, the school, the stack — as a scroll story.
     </p>
     <form class="gh-form" action={link('edit')} method="get">
@@ -49,7 +49,7 @@ if (SERVER_MODE) {
       <a class="btn ghost" href="#stages">See the stages ↓</a>
       <a class="btn ghost" href={link('edit?new')}>Start blank</a>
       <a class="btn ghost" href={link('themes')}>Browse themes</a>
-      <a class="btn ghost" href="https://github.com/pipozzz/showtime/generate">Use as GitHub template</a>
+      <a class="btn ghost" href="https://github.com/pipozzz/starring/generate">Use as GitHub template</a>
     </div>
   </header>
 
@@ -78,7 +78,7 @@ if (SERVER_MODE) {
     <ol>
       <li class="reveal"><b class="display accent">01</b><p>Write one YAML file — or sign in with GitHub / GitLab and fill the editor.</p></li>
       <li class="reveal"><b class="display accent">02</b><p>Run the importer on your machine. It counts your commits in private repos — dates only, never code.</p></li>
-      <li class="reveal"><b class="display accent">03</b><p>Get <span class="mono">showtime.dev/you</span>, or self-host the static build anywhere.</p></li>
+      <li class="reveal"><b class="display accent">03</b><p>Get <span class="mono">starring.dev/you</span>, or self-host the static build anywhere.</p></li>
     </ol>
   </section>
 </Layout>
@@ -89,7 +89,7 @@ if (SERVER_MODE) {
   .top a { text-decoration: none; }
   .landing { min-height: 100svh; padding: max(48px, 8svh) var(--gutter); display: grid; align-content: center; gap: clamp(18px, 3.5svh, 32px); }
   /* sized by width AND height, so short laptop screens still show the form above the fold */
-  .landing h1 { font-size: clamp(72px, min(15vw, 26svh), 260px); }
+  .landing h1 { font-size: clamp(64px, min(15vw, 24svh), 240px); line-height: .95; }
   .pitch { font-size: clamp(18px, min(2.2vw, 3.6svh), 30px); max-width: 38ch; font-weight: 500; }
   /* wide screens: title left, pitch + form right */
   @media (min-width: 960px) {
@@ -101,12 +101,14 @@ if (SERVER_MODE) {
       justify-content: start;
     }
     .landing > .mono { grid-area: kicker; }
-    .landing h1 { grid-area: title; align-self: center; font-size: clamp(72px, min(13vw, 34svh), 300px); }
+    .landing h1 { grid-area: title; align-self: center; font-size: clamp(72px, min(12vw, 30svh), 280px); }
     .landing .pitch { grid-area: pitch; }
     .landing .gh-form { grid-area: form; }
     .landing .cta { grid-area: cta; }
   }
   .cta { display: flex; gap: 16px; flex-wrap: wrap; }
+  .brandline { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .brandline img { height: 34px; width: auto; }
   .gh-form { display: grid; gap: 10px; max-width: 720px; }
   .gh-form label { color: var(--accent); }
   .gh-row { display: flex; align-items: stretch; border: 2px solid var(--fg); }

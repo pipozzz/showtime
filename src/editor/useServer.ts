@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { validate, type Profile } from '../lib/model';
 
-export const HOSTED = import.meta.env.SHOWTIME_MODE === 'server';
+export const HOSTED = import.meta.env.STARRING_MODE === 'server';
 
 export type SyncStatus =
   | 'off' // static mode

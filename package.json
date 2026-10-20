@@ -1,5 +1,5 @@
 {
-  "name": "showtime",
+  "name": "starring",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,15 +11,16 @@
     "preview": "astro preview",
     "new:theme": "node scripts/new-theme.mjs",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
-    "dev:server": "SHOWTIME_MODE=server astro dev",
-    "build:server": "SHOWTIME_MODE=server astro build",
+    "dev:server": "STARRING_MODE=server astro dev",
+    "build:server": "STARRING_MODE=server astro build",
     "start": "node scripts/migrate.mjs && node dist/server/entry.mjs",
     "db:up": "docker compose -f docker-compose.dev.yml up -d --wait",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
     "check": "astro check",
     "check:themes": "node scripts/check-themes.mjs",
-    "test:e2e": "node scripts/e2e.mjs"
+    "test:e2e": "node scripts/e2e.mjs",
+    "brand": "node scripts/brand.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.9",

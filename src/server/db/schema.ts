@@ -1,5 +1,5 @@
 // Postgres schema. Better Auth core tables (user, session, account, verification)
-// match better-auth@1.7 getAuthTables(); `profile` is Showtime's own.
+// match better-auth@1.7 getAuthTables(); `profile` is Starring's own.
 import { boolean, index, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type { Profile } from '../../lib/model';
 

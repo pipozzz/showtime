@@ -35,14 +35,14 @@ const stats = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>{profile.profile.name} — Showtime card</title>
+    <title>{profile.profile.name} — Starring card</title>
     <link rel="canonical" href={stage} />
     <link href={themeFontsHref([theme.id])} rel="stylesheet" />
     <style is:inline set:html={themesCss()} />
   </head>
   <body>
     <a class="card" href={stage} target="_top" rel="noopener">
-      <span class="kicker">Showtime presents</span>
+      <span class="kicker">Now starring</span>
       <span class="name"><span>{first}</span> <span class="accent">{rest.join(' ')}</span></span>
       <span class="role">{profile.profile.role}</span>
       {stats.length > 0 && (

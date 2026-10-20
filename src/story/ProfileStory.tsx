@@ -50,7 +50,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
     <div className={`story${preview ? ' is-preview' : ''}`} data-theme={p.theme ?? 'acid'}>
       <header className="hero" {...sec('profile')}>
         <div className="hero-top mono">
-          <a href={link()}>Showtime</a>
+          <a href={link()}>Starring</a>
           <span>{me.location}</span>
           {me.available && <span className="tag solid">Available for work</span>}
         </div>
@@ -219,7 +219,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
         <ul className="mono">
           {links.map(([k, v]) => <li key={k}><a href={v}>{k} ↗</a></li>)}
         </ul>
-        <p className="mono muted">Made with Showtime — open source</p>
+        <p className="mono muted">Made with Starring — open source</p>
       </footer>
     </div>
   );

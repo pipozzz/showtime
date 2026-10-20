@@ -56,7 +56,7 @@ const MAX_BYTES = 200_000;
 
 /** Validate a document coming from the editor before it touches the DB. */
 const clean = (data: unknown, handle: string): Profile => {
-  if (!data || typeof data !== 'object' || !('profile' in data)) throw new ProfileError('Not a Showtime profile');
+  if (!data || typeof data !== 'object' || !('profile' in data)) throw new ProfileError('Not a Starring profile');
   if (JSON.stringify(data).length > MAX_BYTES) throw new ProfileError('Profile is too large', 413);
   const p = { ...(data as Profile), handle };
   if (!hasTheme(p.theme)) p.theme = undefined;

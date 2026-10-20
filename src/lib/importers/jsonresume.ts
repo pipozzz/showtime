@@ -1,4 +1,4 @@
-// Local JSON Resume → Showtime draft. No network requests or storage.
+// Local JSON Resume → Starring draft. No network requests or storage.
 import { blankProfile, THIS_YEAR, type Profile } from '../model.ts';
 
 type RecordValue = Record<string, unknown>;
@@ -115,7 +115,7 @@ export function importJsonResume(json: unknown, opts: { base?: Profile } = {}): 
     const from = startYear(entry.startDate, `${path}.startDate`, end ?? THIS_YEAR);
     const to = end ?? THIS_YEAR;
     if (to < from) throw new Error(`${path}.endDate is before startDate`);
-    if (end === undefined) notes.push(`${path} has no end date — Showtime uses ${THIS_YEAR}; review it before publishing.`);
+    if (end === undefined) notes.push(`${path} has no end date — Starring uses ${THIS_YEAR}; review it before publishing.`);
     return {
       school: required(entry.institution, `${path}.institution`, 'School'),
       degree: [text(entry.studyType, `${path}.studyType`), text(entry.area, `${path}.area`)].filter(Boolean).join(' · '),
@@ -163,8 +163,8 @@ export function importJsonResume(json: unknown, opts: { base?: Profile } = {}): 
     projects: append(base.projects ?? [], projects, (item) => item.title),
     skills,
   };
-  if (!opts.base) notes.push('Choose your Showtime handle and review the imported draft before publishing.');
+  if (!opts.base) notes.push('Choose your Starring handle and review the imported draft before publishing.');
   const skipped = ['volunteer', 'awards', 'certificates', 'publications', 'languages', 'interests', 'references'].filter((key) => Array.isArray(resume[key]) && resume[key].length);
-  if (skipped.length) notes.push(`Not imported (no matching Showtime fields): ${skipped.join(', ')}.`);
+  if (skipped.length) notes.push(`Not imported (no matching Starring fields): ${skipped.join(', ')}.`);
   return { profile, notes };
 }

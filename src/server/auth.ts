@@ -18,7 +18,7 @@ if (!env.BETTER_AUTH_SECRET && env.NODE_ENV === 'production') {
 }
 
 export const auth = betterAuth({
-  appName: 'Showtime',
+  appName: 'Starring',
   baseURL: env.BETTER_AUTH_URL || env.SITE_URL || 'http://localhost:4321',
   basePath: '/api/auth',
   secret: env.BETTER_AUTH_SECRET || 'dev-only-insecure-secret-change-me-0123456789',

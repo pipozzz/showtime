@@ -10,9 +10,9 @@ const session = await getSession(Astro.request);
 if (!session) return Astro.redirect(`${link('login')}?next=${encodeURIComponent(link('account'))}`);
 const own = await getByUser(session.user.id);
 ---
-<Layout title="Account — Showtime" fonts={['acid']} noindex>
+<Layout title="Account — Starring" fonts={['acid']} noindex>
   <main class="acct">
-    <a class="mono accent back" href={link()}>← Showtime</a>
+    <a class="mono accent back" href={link()}>← Starring</a>
     <h1 class="display">Your<br /><span class="accent">stage.</span></h1>
 
     <section class="card">

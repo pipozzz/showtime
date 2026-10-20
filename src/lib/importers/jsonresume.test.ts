@@ -8,7 +8,7 @@ import { blankProfile, THIS_YEAR, validate } from '../model.ts';
 // https://github.com/jsonresume/resume-schema/blob/master/sample.resume.json
 const sample = JSON.parse(readFileSync(new URL('./fixtures/sample.resume.json', import.meta.url), 'utf8'));
 
-test('imports the official sample into a valid Showtime profile', () => {
+test('imports the official sample into a valid Starring profile', () => {
   const { profile, notes } = importJsonResume(sample);
   assert.deepEqual(validate(profile), {});
   assert.equal(profile.profile.name, 'Richard Hendriks');
@@ -95,7 +95,7 @@ test('reports actionable errors for invalid input, field shapes and dates', () =
   assert.throws(() => importJsonResume({ basics: {}, skills: [{ keywords: [1] }] }), /keywords\[0\] must be text/);
 });
 
-test('rejects links that cannot safely render as Showtime web links', () => {
+test('rejects links that cannot safely render as Starring web links', () => {
   for (const url of ['javascript:alert(1)', 'ftp://example.com', 'not a url']) {
     assert.throws(() => importJsonResume({ basics: { url } }), /http/);
     assert.throws(() => importJsonResume({ basics: {}, projects: [{ url }] }), /http/);

@@ -31,13 +31,13 @@ const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, A
   fonts={[profile.theme]}
   type="profile"
   image={image}
-  imageAlt={`${profile.profile.name}, ${profile.profile.role} — Showtime poster`}
+  imageAlt={`${profile.profile.name}, ${profile.profile.role} — Starring poster`}
   jsonLd={profileJsonLd(profile, url, image)}
   oembed={oembed}
   profileName={{ first, last: rest.join(' '), username: profile.handle }}
 >
   <ProfileStory p={profile} />
-  <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Showtime ✎</a>
+  <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Starring ✎</a>
 </Layout>
 
 <style>

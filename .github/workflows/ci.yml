@@ -52,7 +52,7 @@ jobs:
       - name: Static build under a project-pages base path (catches hard-coded "/" links)
         run: npm run build
         env:
-          BASE_PATH: /showtime
+          BASE_PATH: /starring
           SITE_URL: https://example.github.io
       - name: Server build
         run: npm run build:server
@@ -64,14 +64,14 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: showtime
-          POSTGRES_PASSWORD: showtime
-          POSTGRES_DB: showtime
+          POSTGRES_USER: starring
+          POSTGRES_PASSWORD: starring
+          POSTGRES_DB: starring
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U showtime" --health-interval 2s --health-timeout 3s --health-retries 30
+          --health-cmd "pg_isready -U starring" --health-interval 2s --health-timeout 3s --health-retries 30
     env:
-      DATABASE_URL: postgres://showtime:showtime@localhost:5432/showtime
+      DATABASE_URL: postgres://starring:starring@localhost:5432/starring
       BETTER_AUTH_URL: http://localhost:4321
       SITE_URL: http://localhost:4321
       BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-000000
@@ -108,6 +108,6 @@ jobs:
         with:
           context: .
           push: false
-          tags: showtime:ci
+          tags: starring:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max

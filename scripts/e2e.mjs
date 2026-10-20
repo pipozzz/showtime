@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 const BASE = (process.env.E2E_URL ?? 'http://localhost:4321').replace(/\/$/, '');
 const ORIGIN = new URL(BASE).origin;
 const id = randomBytes(4).toString('hex');
-const email = `e2e-${id}@showtime.test`;
+const email = `e2e-${id}@starring.test`;
 const password = randomBytes(18).toString('base64url');
 const handle = `e2e-${id}`;
 let cookie = '';
@@ -51,7 +51,7 @@ const profile = {
   projects: [{ title: 'Premiere Hub', client: 'Northwind Pictures', year: 2024, visibility: 'nda', blurb: 'Launch platform.' }],
 };
 
-console.log(`Showtime e2e → ${BASE}`);
+console.log(`Starring e2e → ${BASE}`);
 try {
   await step('home, themes, robots and sitemap respond', async () => {
     for (const p of ['/', '/themes', '/robots.txt', '/sitemap.xml', '/og.png']) assert.equal((await call('GET', p)).status, 200, p);

@@ -3,14 +3,14 @@ import react from '@astrojs/react';
 import node from '@astrojs/node';
 
 // Two modes, one codebase:
-//   SHOWTIME_MODE=static (default) — YAML profiles, static HTML, GitHub Pages / any static host
-//   SHOWTIME_MODE=server           — Node server + Postgres: registration, profiles in the DB
-const MODE = process.env.SHOWTIME_MODE === 'server' ? 'server' : 'static';
+//   STARRING_MODE=static (default) — YAML profiles, static HTML, GitHub Pages / any static host
+//   STARRING_MODE=server           — Node server + Postgres: registration, profiles in the DB
+const MODE = process.env.STARRING_MODE === 'server' ? 'server' : 'static';
 
 // Server-only routes live in src/server/ and are injected only in server mode,
 // so the static build never sees endpoints that need a request.
 const serverRoutes = () => ({
-  name: 'showtime-server-routes',
+  name: 'starring-server-routes',
   hooks: {
     'astro:config:setup': ({ injectRoute }) => {
       if (MODE !== 'server') return;
@@ -38,6 +38,6 @@ export default defineConfig({
   adapter: MODE === 'server' ? node({ mode: 'standalone' }) : undefined,
   integrations: [react(), serverRoutes()],
   vite: {
-    define: { 'import.meta.env.SHOWTIME_MODE': JSON.stringify(MODE) },
+    define: { 'import.meta.env.STARRING_MODE': JSON.stringify(MODE) },
   },
 });

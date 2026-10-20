@@ -59,9 +59,10 @@ const ldJson = (o: object) => JSON.stringify(o).replace(/</g, '\\u003c');
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={getTheme(theme).tokens.bg} />
     <link rel="icon" href={link('favicon.svg')} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={link('apple-touch-icon.png')} />
     <link rel="sitemap" href={link('sitemap.xml')} />
 
-    <meta property="og:site_name" content="Showtime" />
+    <meta property="og:site_name" content="Starring" />
     <meta property="og:type" content={type} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

@@ -8,15 +8,15 @@ import { link } from '../lib/url';
 const sample = (await store.list())[0];
 const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
 ---
-<Layout title="Themes — Showtime" description="Every Showtime theme, made by the community.">
+<Layout title="Themes — Starring" description="Every Starring theme, made by the community.">
   <header class="th-head">
-    <a class="mono accent" href={link()}>← Showtime</a>
+    <a class="mono accent" href={link()}>← Starring</a>
     <h1 class="display">Themes<span class="accent">.</span></h1>
     <p class="pitch">
       {THEMES.length} stages, one YAML line: <code class="mono">theme: {THEMES[1]?.id ?? 'acid'}</code>.
       Every theme is a folder in <code class="mono">src/themes/</code> — make your own in a few minutes.
     </p>
-    <a class="btn" href="https://github.com/pipozzz/showtime/blob/main/CONTRIBUTING.md#add-a-theme">Make a theme →</a>
+    <a class="btn" href="https://github.com/pipozzz/starring/blob/main/CONTRIBUTING.md#add-a-theme">Make a theme →</a>
   </header>
 
   <ul class="th-grid">
@@ -40,7 +40,7 @@ const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
           </p>
           <div class="th-actions">
             <a class="btn" href={link(`edit?from=${sample?.handle ?? ''}&theme=${t.id}`)}>Try in editor</a>
-            <a class="btn ghost" href={`https://github.com/pipozzz/showtime/tree/main/src/themes/${t.id}`}>Source</a>
+            <a class="btn ghost" href={`https://github.com/pipozzz/starring/tree/main/src/themes/${t.id}`}>Source</a>
           </div>
         </div>
       </li>

@@ -14,9 +14,9 @@ if (await getSession(Astro.request)) return Astro.redirect(next);
 const mode = Astro.url.searchParams.get('mode') === 'signup' && instance.allowSignup ? 'signup' : 'signin';
 const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.gitlab && { id: 'gitlab', label: 'GitLab' }].filter(Boolean) as { id: string; label: string }[];
 ---
-<Layout title={mode === 'signup' ? 'Claim your stage — Showtime' : 'Sign in — Showtime'} fonts={['acid']} noindex>
+<Layout title={mode === 'signup' ? 'Claim your stage — Starring' : 'Sign in — Starring'} fonts={['acid']} noindex>
   <main class="auth" data-next={next} data-mode={mode}>
-    <a class="mono accent back" href={link()}>← Showtime</a>
+    <a class="mono accent back" href={link()}>← Starring</a>
     <h1 class="display">{mode === 'signup' ? <>Claim your<br /><span class="accent">stage.</span></> : <>Welcome<br /><span class="accent">back.</span></>}</h1>
 
     {social.length > 0 && (

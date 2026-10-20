@@ -14,7 +14,7 @@ import {
 } from './sections';
 import './editor.css';
 
-const DRAFT_KEY = 'showtime:draft:v1';
+const DRAFT_KEY = 'starring:draft:v1';
 
 const SECTIONS: { id: string; label: string; short: string; act: string; C: (p: SectionProps) => ReactElement; prefix: string[] }[] = [
   { id: 'profile', label: 'Headliner', short: 'Hero', act: 'Hero', C: ProfileSection, prefix: ['handle', 'profile.'] },
@@ -41,14 +41,14 @@ type Device = keyof typeof DEVICES;
 // ---------- helpers ----------
 
 const normalize = (raw: unknown): Profile => {
-  if (!raw || typeof raw !== 'object' || !('profile' in raw)) throw new Error('Not a Showtime profile: missing `profile:` block');
+  if (!raw || typeof raw !== 'object' || !('profile' in raw)) throw new Error('Not a Starring profile: missing `profile:` block');
   const b = blankProfile();
   const r = raw as Profile;
   return { ...b, ...r, profile: { ...b.profile, ...r.profile } };
 };
 
 const toYaml = (p: Profile) =>
-  `# Showtime profile — drop into profiles/${p.handle}.yaml\n# https://github.com/pipozzz/showtime\n` + stringify(p, { lineWidth: 0 });
+  `# Starring profile — drop into profiles/${p.handle}.yaml\n# https://github.com/pipozzz/starring\n` + stringify(p, { lineWidth: 0 });
 
 const readiness = (p: Profile) => {
   const t = totals(p);
@@ -107,7 +107,8 @@ export default function Editor({ samples }: Props) {
     if (q.has('new')) return { p: blankProfile(), source: 'Blank stage' };
     let draft: Profile | undefined;
     try {
-      const d = localStorage.getItem(DRAFT_KEY);
+      // drafts saved before the rename to Starring live under the old key
+      const d = localStorage.getItem(DRAFT_KEY) ?? localStorage.getItem('showtime:draft:v1');
       if (d) draft = normalize(JSON.parse(d));
     } catch { /* storage blocked or corrupt draft */ }
     // GitHub import replaces this after load; keeping the draft makes it undoable
@@ -276,7 +277,7 @@ export default function Editor({ samples }: Props) {
       style={{ ['--accent' as string]: getTheme(p.theme).tokens.accent, ['--accent-ink' as string]: getTheme(p.theme).tokens.accentInk }}
     >
       <header className="ed-top">
-        <a href={link()} className="ed-logo display">Show<span className="accent">time</span></a>
+        <a href={link()} className="ed-logo display" aria-label="Starring home"><img src={link('brand/mark.svg')} alt="" width={26} height={26} /><span>Star<span className="accent">ring</span></span></a>
         <span className="ed-sep" />
         <div className="ed-menu-wrap">
           <button type="button" className="ed-btn ghost" onClick={() => setMenu(menu === 'start' ? null : 'start')} aria-expanded={menu === 'start'}>
@@ -298,7 +299,7 @@ export default function Editor({ samples }: Props) {
           )}
         </div>
         {server.hosted && server.status !== 'anon' ? (
-          <span className={`ed-status mono ${SYNC_CLASS[server.status]}`} title={server.error || 'Your profile on this Showtime instance'}>
+          <span className={`ed-status mono ${SYNC_CLASS[server.status]}`} title={server.error || 'Your profile on this Starring instance'}>
             {SYNC_LABEL[server.status]}
           </span>
         ) : (
@@ -368,7 +369,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-ready">
           <button type="button" className="ed-ready-btn" onClick={() => setMenu(menu === 'ready' ? null : 'ready')} aria-expanded={menu === 'ready'}>
             <span className="ed-ring" style={{ ['--v' as string]: ready.score }}><b>{ready.score}</b></span>
-            <span><span className="mono">Stage ready</span><span className="ed-hint">{ready.todo.length ? `${ready.todo.length} to go` : 'Showtime!'}</span></span>
+            <span><span className="mono">Stage ready</span><span className="ed-hint">{ready.todo.length ? `${ready.todo.length} to go` : 'Starring!'}</span></span>
           </button>
           {menu === 'ready' && ready.todo.length > 0 && (
             <ul className="ed-menu ed-todo" onMouseLeave={() => setMenu(null)}>
@@ -440,7 +441,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Import profile" onClick={(e) => e.target === e.currentTarget && setImportOpen(false)}>
           <form className="ed-modal-box" onSubmit={(e) => { e.preventDefault(); load(new FormData(e.currentTarget).get('yaml') as string, 'Imported'); }}>
             <h3 className="display">Import profile</h3>
-            <p className="muted">Paste a Showtime profile or JSON Resume, choose a file, or drop a file anywhere on the editor. Conversion stays in this browser.</p>
+            <p className="muted">Paste a Starring profile or JSON Resume, choose a file, or drop a file anywhere on the editor. Conversion stays in this browser.</p>
             <div className="ed-seg" role="radiogroup" aria-label="JSON Resume import mode">
               <label className={importMode === 'fresh' ? 'on' : ''}>
                 <input type="radio" name="resume-mode" checked={importMode === 'fresh'} onChange={() => setImportMode('fresh')} />Start fresh
@@ -449,7 +450,7 @@ export default function Editor({ samples }: Props) {
                 <input type="radio" name="resume-mode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} />Merge into current
               </label>
             </div>
-            <p className="ed-hint">{importMode === 'merge' ? 'JSON Resume keeps existing clients, timeline, education and projects, including NDA work. Matching entries stay unchanged.' : 'JSON Resume replaces the draft (you can undo).'} Showtime YAML replaces the draft in either mode.</p>
+            <p className="ed-hint">{importMode === 'merge' ? 'JSON Resume keeps existing clients, timeline, education and projects, including NDA work. Matching entries stay unchanged.' : 'JSON Resume replaces the draft (you can undo).'} Starring YAML replaces the draft in either mode.</p>
             <textarea name="yaml" className="ed-input ed-code" rows={14} placeholder={'handle: you\nprofile:\n  name: …'} autoFocus />
             <div className="ed-modal-actions">
               <button type="button" className="ed-btn ghost" onClick={() => fileInput.current?.click()}>Choose file…</button>

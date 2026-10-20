@@ -56,7 +56,7 @@ export const profileJsonLd = (p: Profile, url: string, image: string) => {
 export const siteJsonLd = (url: string) => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'Showtime',
+  name: 'Starring',
   url,
   description: "Developer careers as scroll stories — including the work GitHub can't show.",
 });

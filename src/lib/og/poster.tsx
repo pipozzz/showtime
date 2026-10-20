@@ -38,7 +38,7 @@ export function ProfilePoster({ p, host }: { p: Profile; host: string }) {
     <div style={{ width: W, height: H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', background: t.bg, color: t.fg, padding: '44px 60px 40px', fontFamily: GROTESK, position: 'relative' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width: W, height: 10, background: t.accent, display: 'flex' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 20, letterSpacing: 2, textTransform: 'uppercase' }}>
-        <span style={{ color: t.accent }}>Showtime presents</span>
+        <span style={{ color: t.accent }}>Now starring</span>
         <span style={{ color: t.muted, whiteSpace: 'nowrap' }}>{`${host}/${p.handle}`}</span>
       </div>
 
@@ -78,11 +78,8 @@ export function SitePoster({ host }: { host: string }) {
     <div style={{ width: W, height: H, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: t.bg, color: t.fg, padding: '56px 64px', fontFamily: GROTESK }}>
       <div style={{ display: 'flex', fontFamily: MONO, fontSize: 22, letterSpacing: 2, textTransform: 'uppercase', color: t.accent }}>Open source · {host}</div>
       <div style={{ display: 'flex', flexDirection: 'column', fontFamily: ANTON, fontSize: 190, lineHeight: 0.86 }}>
-        <span>SHOW</span>
-        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <span>TIME</span>
-          <div style={{ width: 40, height: 40, background: t.accent, marginLeft: 10, marginBottom: 16, display: 'flex' }} />
-        </div>
+        <span>NOW</span>
+        <span style={{ color: t.accent }}>STARRING</span>
       </div>
       <div style={{ display: 'flex', fontSize: 34, fontWeight: 500, maxWidth: 980 }}>
         Your developer career as a scroll story, including the work GitHub can’t show.

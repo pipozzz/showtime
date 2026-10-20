@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ url, site }) => {
     {
       version: '1.0',
       type: 'rich',
-      provider_name: 'Showtime',
+      provider_name: 'Starring',
       provider_url: new URL(link(), base).href,
       title: `${p.profile.name} — ${p.profile.role}`,
       author_name: p.profile.name,
@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ url, site }) => {
       thumbnail_height: 630,
       width,
       height,
-      html: `<iframe src="${src}" width="${width}" height="${height}" style="border:0;max-width:100%" loading="lazy" title="${p.profile.name.replace(/"/g, '&quot;')} on Showtime"></iframe>`,
+      html: `<iframe src="${src}" width="${width}" height="${height}" style="border:0;max-width:100%" loading="lazy" title="${p.profile.name.replace(/"/g, '&quot;')} on Starring"></iframe>`,
     },
     200,
     { 'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': '*' },

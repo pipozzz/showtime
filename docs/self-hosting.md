@@ -1,20 +1,20 @@
-# Self-hosting Showtime
+# Self-hosting Starring
 
-Showtime runs in two modes from the same code:
+Starring runs in two modes from the same code:
 
 | | **Static** (default) | **Server** |
 | --- | --- | --- |
 | Profiles | YAML files in `profiles/` | YAML files **and** user accounts in Postgres |
 | Editing | Editor in the browser, then export `.yaml` | Sign up, claim a handle, autosave, publish |
 | Hosting | GitHub Pages, Netlify, any static host | Docker / Node 22 + Postgres |
-| Turn on | nothing | `SHOWTIME_MODE=server` |
+| Turn on | nothing | `STARRING_MODE=server` |
 
 This guide covers **server mode**.
 
 ## Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/pipozzz/showtime.git && cd showtime
+git clone https://github.com/pipozzz/starring.git && cd starring
 cp .env.example .env
 #   BETTER_AUTH_URL / SITE_URL → the public URL, e.g. https://stage.example.com
 #   BETTER_AUTH_SECRET          → openssl rand -base64 32
@@ -25,7 +25,7 @@ docker compose up -d
 Open `http://localhost:4321` (or the `PORT` you set), click **Create account**, claim a handle, and publish.
 
 - Migrations run on every start (`scripts/migrate.mjs`), so updating is `git pull && docker compose up -d --build`.
-- Postgres data lives in the `showtime-db` volume. Back it up with `docker compose exec db pg_dump -U showtime showtime > backup.sql`.
+- Postgres data lives in the `starring-db` volume. Back it up with `docker compose exec db pg_dump -U starring starring > backup.sql`.
 - YAML profiles still work. `./profiles` is mounted read-only, and file handles can't be claimed by users.
 
 ## Dokploy
@@ -39,7 +39,7 @@ Open `http://localhost:4321` (or the `PORT` you set), click **Create account**, 
 
 ```bash
 npm ci
-SHOWTIME_MODE=server npm run build
+STARRING_MODE=server npm run build
 DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… npm start
 ```
 
@@ -49,7 +49,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 
 | Variable | Default | |
 | --- | --- | --- |
-| `SHOWTIME_MODE` | `static` | `server` enables accounts and the DB. The Docker image sets it. |
+| `STARRING_MODE` | `static` | `server` enables accounts and the DB. The Docker image sets it. |
 | `DATABASE_URL` | none | Postgres connection string (set by compose) |
 | `BETTER_AUTH_URL` | `http://localhost:4321` | Public URL. Used for OAuth callbacks, cookies and origin checks. |
 | `SITE_URL` | same | Canonical URLs, sitemap and Open Graph |
@@ -75,7 +75,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 
 ```bash
 npm run db:up                                                     # Postgres on 127.0.0.1:5440
-export DATABASE_URL=postgres://showtime:showtime@127.0.0.1:5440/showtime
+export DATABASE_URL=postgres://starring:starring@127.0.0.1:5440/starring
 npm run db:migrate
 npm run dev:server                                                # http://localhost:4321
 ```

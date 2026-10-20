@@ -74,6 +74,6 @@ const hybridStore = (): ProfileStore => {
   };
 };
 
-export const SERVER_MODE = import.meta.env.SHOWTIME_MODE === 'server';
+export const SERVER_MODE = import.meta.env.STARRING_MODE === 'server';
 
 export const store: ProfileStore = SERVER_MODE ? hybridStore() : yamlStore();

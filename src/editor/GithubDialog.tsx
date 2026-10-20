@@ -10,7 +10,7 @@ interface Props {
   onClose: () => void;
 }
 
-const TOKEN_URL = 'https://github.com/settings/tokens/new?description=Showtime%20import&scopes=read:user';
+const TOKEN_URL = 'https://github.com/settings/tokens/new?description=Starring%20import&scopes=read:user';
 
 export default function GithubDialog({ current, initialUser = '', initialError = '', onDone, onClose }: Props) {
   const [user, setUser] = useState(initialUser);

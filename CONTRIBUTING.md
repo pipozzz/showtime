@@ -1,12 +1,12 @@
-# Contributing to Showtime
+# Contributing to Starring
 
-Thanks for taking a look. Showtime aims to be the place developers show their whole career, so contributions that help more people tell their story are the most welcome.
+Thanks for taking a look. Starring aims to be the place developers show their whole career, so contributions that help more people tell their story are the most welcome.
 
 ## Setup
 
 ```bash
-git clone https://github.com/pipozzz/showtime.git
-cd showtime
+git clone https://github.com/pipozzz/starring.git
+cd starring
 npm install
 npm run dev        # http://localhost:4321, editor at /edit
 ```
@@ -25,7 +25,7 @@ npm run build          # static build
 Touching server mode (`src/server/`, auth, the DB)? Also run:
 
 ```bash
-npm run db:up && export DATABASE_URL=postgres://showtime:showtime@127.0.0.1:5440/showtime
+npm run db:up && export DATABASE_URL=postgres://starring:starring@127.0.0.1:5440/starring
 npm run db:migrate && npm run build:server
 node dist/server/entry.mjs &   # then:
 npm run test:e2e               # sign-up → claim → save → publish → delete, plus security guards
@@ -37,7 +37,7 @@ npm run test:e2e               # sign-up → claim → save → publish → dele
 | --- | --- |
 | `check` | `astro check` (types), theme lint, no whitespace errors |
 | `test` | Unit tests: model, SEO/JSON-LD, GitHub and JSON Resume importers |
-| `build` | Static build, static build under `/showtime` (catches hard-coded links), server build |
+| `build` | Static build, static build under `/starring` (catches hard-coded links), server build |
 | `e2e` | Server build against Postgres. Migrations must be committed, then the full account → publish flow runs |
 | `docker` | The self-hosting image builds |
 
@@ -80,7 +80,7 @@ Then add it to the editor's *Start from* menu.
 
 ### Add a theme
 
-This is the easiest way to contribute, and every theme shows up in the [gallery](https://pipozzz.github.io/showtime/themes) with your name on it.
+This is the easiest way to contribute, and every theme shows up in the [gallery](https://pipozzz.github.io/starring/themes) with your name on it.
 
 ```bash
 npm run new:theme -- noir "Film Noir"

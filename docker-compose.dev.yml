@@ -3,17 +3,17 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: showtime
-      POSTGRES_PASSWORD: showtime
-      POSTGRES_DB: showtime
+      POSTGRES_USER: starring
+      POSTGRES_PASSWORD: starring
+      POSTGRES_DB: starring
     ports:
       - "127.0.0.1:5440:5432"
     volumes:
-      - showtime-dev-db:/var/lib/postgresql/data
+      - starring-dev-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U showtime"]
+      test: ["CMD-SHELL", "pg_isready -U starring"]
       interval: 2s
       timeout: 3s
       retries: 20
 volumes:
-  showtime-dev-db:
+  starring-dev-db:
