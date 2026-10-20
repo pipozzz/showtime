@@ -11,9 +11,11 @@ const profiles = await store.list();
 // Personal site: one profile in profiles/ → it is the home page.
 const me = (await store.mode()) === 'personal' ? profiles[0] : undefined;
 let signedIn = false;
+let signupOpen = false;
 if (SERVER_MODE) {
-  const { getSession } = await import('../server/auth');
+  const { getSession, signupOffered } = await import('../server/auth');
   signedIn = !!(await getSession(Astro.request));
+  signupOpen = !signedIn && (await signupOffered());
 }
 ---
 {me ? (
@@ -26,7 +28,7 @@ if (SERVER_MODE) {
     <nav class="top mono">
       {signedIn
         ? <><a href={link('edit')}>Editor</a><a href={link('account')}>Account</a></>
-        : <><a href={link('login')}>Sign in</a><a class="accent" href={`${link('login')}?mode=signup`}>Create account</a></>}
+        : <><a href={link('login')}>Sign in</a>{signupOpen && <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a>}</>}
     </nav>
   )}
   <header class="landing">

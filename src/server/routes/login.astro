@@ -1,6 +1,6 @@
 ---
 import Layout from '../../components/Layout.astro';
-import { getSession, instance } from '../auth';
+import { getSession, instance, signupOffered } from '../auth';
 import { link } from '../../lib/url';
 
 export const prerender = false;
@@ -11,7 +11,8 @@ const next = /^\/(?!\/)/.test(nextParam) ? nextParam : link('edit');
 
 if (await getSession(Astro.request)) return Astro.redirect(next);
 
-const mode = Astro.url.searchParams.get('mode') === 'signup' && instance.allowSignup ? 'signup' : 'signin';
+const canOfferSignup = await signupOffered();
+const mode = Astro.url.searchParams.get('mode') === 'signup' && canOfferSignup ? 'signup' : 'signin';
 const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.gitlab && { id: 'gitlab', label: 'GitLab' }].filter(Boolean) as { id: string; label: string }[];
 ---
 <Layout title={mode === 'signup' ? 'Claim your stage — Starring' : 'Sign in — Starring'} fonts={['acid']} noindex>
@@ -45,7 +46,7 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
     <p class="switch">
       {mode === 'signup'
         ? <>Already have a stage? <a href={`${link('login')}?next=${encodeURIComponent(next)}`}>Sign in</a></>
-        : instance.allowSignup
+        : canOfferSignup
           ? <>New here? <a href={`${link('login')}?mode=signup&next=${encodeURIComponent(next)}`}>Create an account</a></>
           : <span class="muted">Sign-ups are closed on this instance.</span>}
     </p>

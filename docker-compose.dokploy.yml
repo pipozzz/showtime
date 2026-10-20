@@ -1,0 +1,59 @@
+# Starring on Dokploy (Compose service + GitHub integration).
+#
+# In Dokploy: Create Service → Compose → Provider: GitHub → repo pipozzz/starring,
+# branch main, Compose Path: ./docker-compose.dokploy.yml. Then:
+#   Environment tab → paste the variables below (see docs/self-hosting.md#dokploy)
+#   Domains tab     → Service: app, Port: 4321, HTTPS on, e.g. app.starring.dev
+# No ports are published: Dokploy attaches its Traefik network and routes the domain.
+# Postgres stays on the internal network only.
+
+services:
+  app:
+    # Prebuilt by .github/workflows/image.yml. Pin a release with STARRING_IMAGE_TAG
+    # (e.g. sha-1a2b3c4) for reproducible deploys and rollbacks.
+    image: ghcr.io/pipozzz/starring:${STARRING_IMAGE_TAG:-latest}
+    pull_policy: always
+    # To build on the server instead (e.g. from a fork), replace the two lines above with:
+    # build: .
+    restart: unless-stopped
+    expose:
+      - "4321"
+    environment:
+      STARRING_MODE: server
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "4321"
+      DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/starring
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public URL, e.g. https://app.starring.dev}
+      SITE_URL: ${SITE_URL:-${BETTER_AUTH_URL}}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (openssl rand -base64 32)}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
+      SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-true}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID:-}
+      GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
+      GITLAB_ISSUER: ${GITLAB_ISSUER:-https://gitlab.com}
+      PLAUSIBLE_SRC: ${PLAUSIBLE_SRC:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: starring
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: starring
+    volumes:
+      - starring-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U starring"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  starring-db:
