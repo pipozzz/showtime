@@ -1,5 +1,6 @@
 // Reports from visitors and the moderator actions behind /admin.
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { fileHandles } from '../lib/profiles';
 import { db, schema } from './db';
 import { adminEmails } from './blocklist';
 import { mailEnabled, sendMail } from './mail';
@@ -46,8 +47,15 @@ export async function createReport(input: { handle: string; reason: string; deta
   return id;
 }
 
-export const openReports = () =>
-  db.select().from(report).where(eq(report.status, 'open')).orderBy(desc(report.createdAt)).limit(200);
+/** Open reports, newest first. Reports on profiles that no longer exist (account or profile deleted) are closed on the way. */
+export async function openReports() {
+  const open = await db.select().from(report).where(eq(report.status, 'open')).orderBy(desc(report.createdAt)).limit(200);
+  if (!open.length) return open;
+  const live = new Set([...(await db.select({ handle: profile.handle }).from(profile)).map((p) => p.handle), ...fileHandles()]);
+  const gone = open.filter((r) => !live.has(r.handle)).map((r) => r.id);
+  if (gone.length) await db.update(report).set({ status: 'dismissed', resolvedAt: new Date() }).where(inArray(report.id, gone));
+  return open.filter((r) => live.has(r.handle));
+}
 
 export const hiddenProfiles = () =>
   db.select({ handle: profile.handle, hiddenAt: profile.hiddenAt, hiddenReason: profile.hiddenReason }).from(profile).where(isNotNull(profile.hiddenAt)).orderBy(desc(profile.hiddenAt));

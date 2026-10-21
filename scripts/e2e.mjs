@@ -227,9 +227,21 @@ try {
       await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Gus Guest', email: guest, password: randomBytes(18).toString('base64url') }), 200);
       const data = await expect(await call('GET', '/api/me/export'), 200);
       assert.equal(data.accessRequest.status, 'joined');
+      // a published, reported profile whose owner then leaves: the report must not linger in /admin
+      const gh = `guest-${id}`;
+      await expect(await call('PUT', '/api/profile', { handle: gh, data: { ...profile, handle: gh }, published: true }), 200);
+      await expect(await call('PATCH', '/api/profile', { published: true }), 200);
+      const me = jars.user; jars.user = '';
+      await expect(await call('POST', '/api/report', { handle: gh, reason: 'spam', details: 'e2e' }, { 'User-Agent': `e2e-${id}-guest` }), 200);
+      jars.user = me;
+      as = 'admin';
+      assert.match(await expect(await call('GET', '/admin'), 200), new RegExp(`/${gh}`), 'report is listed while the profile exists');
+      as = 'user';
       await expect(await call('POST', '/api/auth/delete-user', {}), 200);
       as = 'admin';
-      assert.doesNotMatch(await expect(await call('GET', '/admin'), 200), new RegExp(guest), 'request removed with the account');
+      const after = await expect(await call('GET', '/admin'), 200);
+      assert.doesNotMatch(after, new RegExp(guest), 'request removed with the account');
+      assert.doesNotMatch(after, new RegExp(`/${gh}`), 'reports on deleted profiles are closed');
       await expect(await call('POST', '/api/auth/delete-user', {}), 200);
       as = 'user'; jars.user = saved;
     });
