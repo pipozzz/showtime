@@ -6,12 +6,13 @@
 
 <p align="center">
   <b>Your developer career as a scroll story, including the work GitHub can't show.</b><br />
-  Open source · one YAML file per person · free on GitHub Pages
+  Open source · hosted at starring.dev, free on GitHub Pages, or self-hosted with accounts
 </p>
 
 <p align="center">
-  <a href="https://starring.dev/"><b>Live demo</b></a> ·
+  <a href="https://starring.dev/nova/"><b>See a profile</b></a> ·
   <a href="https://starring.dev/edit/"><b>Try the editor</b></a> ·
+  <a href="https://starring.dev/login?mode=request"><b>Get a stage on starring.dev</b></a> ·
   <a href="https://github.com/pipozzz/starring/generate"><b>Use this template</b></a> ·
   <a href="#your-own-starring-site-in-5-minutes">5-minute setup</a> ·
   <a href="#contributing">Contribute</a>
@@ -34,7 +35,16 @@ Most working developers' best code sits in private repos: client projects, the a
   </tr>
 </table>
 
-> **Try it now:** open the [live demo](https://starring.dev/) and type your GitHub username, or browse the sample profiles [Nova](https://starring.dev/nova/) and [Milo](https://starring.dev/milo/). Nothing is stored on a server.
+> **Try it now:** open the [editor](https://starring.dev/edit/) and start from your GitHub username, or browse the sample profiles [Nova](https://starring.dev/nova/) and [Milo](https://starring.dev/milo/). Until you sign in, your draft stays in your browser.
+
+## Three ways to use it
+
+| | **starring.dev** | **Your own GitHub Pages** | **Self-hosted** |
+| --- | --- | --- | --- |
+| What it is | The hosted instance: sign up, claim `starring.dev/<you>`, publish | A static site from this template, one YAML file per person | Your own instance with accounts, for a team, agency or community |
+| Your data | In the instance's Postgres; export it anytime | A file in your repo | In your Postgres |
+| Cost | Free during the beta | Free | Your server |
+| Start | [Request access](https://starring.dev/login?mode=request) (private beta) | [5-minute setup](#your-own-starring-site-in-5-minutes) | [Docker Compose](#self-host-it-with-accounts) |
 
 ## What you get
 
@@ -45,6 +55,7 @@ Most working developers' best code sits in private repos: client projects, the a
 - **A visual editor with a live preview** at desktop, tablet and phone sizes. It has drag and drop, undo, validation and a "stage ready" score.
 - **Your data stays a file.** A profile is one readable YAML file in your repo. There's no account and no lock-in.
 - **Static and fast.** Built with Astro and no client JS on profile pages. It deploys to GitHub Pages with the included workflow.
+- **Know who's watching.** On a hosted instance, owners see their page's visitors, sources (LinkedIn, GitHub…) and countries. The data comes from the instance's cookieless Plausible.
 
 <p align="center">
   <img src="docs/screenshots/editor.png" alt="The Starring editor: section list, form fields and a live preview of the profile" width="100%" />
@@ -70,7 +81,16 @@ cp .env.example .env   # set BETTER_AUTH_URL, BETTER_AUTH_SECRET, POSTGRES_PASSW
 docker compose up -d
 ```
 
-You get email + password sign-up (GitHub and GitLab sign-in optional), password reset and address confirmation over your own SMTP server ([email setup](docs/self-hosting.md#email-smtp)), autosave to the database, publish and unpublish, account deletion, and an `ALLOW_SIGNUP=false` switch for private instances. The editor and the scroll story are the same as in static mode.
+What you get:
+- **Accounts:** email and password sign-up (GitHub and GitLab sign-in optional), with password reset and address confirmation over your own SMTP server ([email setup](docs/self-hosting.md#email-smtp)).
+- **Profiles:** autosave to Postgres, publish and unpublish, and a public directory at `/explore`.
+- **Private beta:** `ALLOW_SIGNUP=false` makes visitors *request access*. You invite them from `/admin` and nothing needs redeploying.
+- **Moderation:** visitors can report profiles, and admins can hide them. Blocked handles stop impersonation.
+- **Privacy built in:** a terms and privacy page with your operator details, *Download my data*, and account deletion.
+- **Ready for production:** security headers and CSP, `GET /api/health` for your orchestrator, and a prebuilt multi-arch image on GHCR.
+- **Optional owner stats** from your Plausible.
+
+The editor and the scroll story are the same as in static mode.
 
 For Dokploy, plain Node and all the settings, see **[docs/self-hosting.md](docs/self-hosting.md)**.
 
@@ -185,10 +205,13 @@ It counts *your* commits in local repos, including client work and a self-hosted
 - [ ] GitLab / Bitbucket / Gitea importers
 - [x] Local `starring scan` CLI for private repos, with a real heatmap
 - [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish
+- [x] Hosted instance at starring.dev, with a private beta, invites, moderation and owner stats
+- [ ] Custom domains for profiles (`you.dev` → your stage)
+- [ ] Translations
 
 ### Architecture
 
-The pages read profiles only through a `ProfileStore` interface (`src/lib/profiles.ts`). Today the store reads YAML files. Hosted mode will put the same JSON document in a database, so the pages and the editor won't change.
+The pages read profiles only through a `ProfileStore` interface (`src/lib/profiles.ts`). In static mode the store reads YAML files. In server mode the same JSON document lives in Postgres, next to any YAML files. The pages and the editor are identical in both modes.
 
 ```
 YAML files ─┐   ┌──────────────┐   ┌─► /<handle>   scroll story (static HTML)
@@ -204,8 +227,8 @@ Postgres  ──┘   └──────────────┘   └─�
 Contributions of every size are welcome. Good places to start:
 
 - **A theme.** Run `npm run new:theme -- <id>`, pick 7 colours and 3 fonts, and open a PR. This is the easiest first PR.
-- **An importer**, for GitLab, Bitbucket, Gitea or JSON Resume. Each one is a small, self-contained module.
-- **Translations** of the story labels.
+- **An importer** for GitLab ([#8](https://github.com/pipozzz/starring/issues/8)), Gitea/Forgejo ([#9](https://github.com/pipozzz/starring/issues/9)) or Bitbucket. Each one is a small, self-contained module.
+- **Translations** of the story labels ([#11](https://github.com/pipozzz/starring/issues/11)).
 - **Bug reports with a profile YAML** that renders wrong.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and conventions. Issues labelled `good first issue` are a good starting point.
