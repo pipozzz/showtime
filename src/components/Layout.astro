@@ -19,6 +19,8 @@ interface Props {
   type?: 'website' | 'profile';
   /** keep app pages (editor, login, account) out of search results */
   noindex?: boolean;
+  /** Absolute canonical URL, when it isn't this page's own address (a stage on its custom domain). */
+  canonical?: string;
   /** schema.org JSON-LD object(s) */
   jsonLd?: object | object[];
   /** oEmbed discovery URL (server mode) */
@@ -36,6 +38,7 @@ const {
   imageAlt,
   type = 'website',
   noindex = false,
+  canonical: canonicalOverride,
   jsonLd,
   oembed,
   profileName,
@@ -44,7 +47,7 @@ const themeId = getTheme(theme).id;
 // NOINDEX=true: a demo/mirror that shouldn't compete with the real site in search
 const siteNoindex = () => /^(1|true|yes)$/i.test(process.env.NOINDEX ?? '');
 const site = publicBase(Astro.site, Astro.url);
-const canonical = new URL(Astro.url.pathname.replace(/\/?$/, '/'), site).href;
+const canonical = canonicalOverride ?? new URL(Astro.url.pathname.replace(/\/?$/, '/'), site).href;
 const imageUrl = /^https?:/.test(image) ? image : new URL(link(image), site).href;
 const ld = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 // JSON-LD lives in a <script>; neutralise "</" so profile text can't close the tag.

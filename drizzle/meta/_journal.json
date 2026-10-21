@@ -22,6 +22,13 @@
       "when": 1792575316202,
       "tag": "0002_access_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792607598838,
+      "tag": "0003_custom_domains",
+      "breakpoints": true
     }
   ]
 }

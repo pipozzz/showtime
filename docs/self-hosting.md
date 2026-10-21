@@ -146,6 +146,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `BLOCKED_HANDLES` | none | Extra handles nobody may claim, added to the built-in list of brands and "official"-looking words |
 | `REDIRECT_HOSTS` | none | Other hostnames that should send visitors to the public URL, comma-separated (e.g. `app.example.com,www.example.com`). Page loads get a 301 and the path is kept. Add those domains to the same service so the requests reach the app. |
 | `TRUST_PROXY` | `false` (`true` in the Dokploy compose) | Use `X-Forwarded-For` for the visitor's IP (rate limits on reports and access requests) even when the proxy connects from a public address. It's always trusted from private addresses (a proxy on the same host or network). Leave it off if the app port is reachable directly. |
+| `CUSTOM_DOMAINS` | `false` | `true` lets owners connect their own domain (Account → Custom domain), verified by a DNS TXT record. TLS needs a proxy that can issue certificates on demand. See [Custom domains](#custom-domains). |
 | `NOINDEX` | `false` | `true` adds `noindex` to every page and makes `robots.txt` block everything. Use it for a demo or mirror (e.g. a GitHub Pages copy) of a site that lives elsewhere. |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
 | `PLAUSIBLE_API_KEY` | none | A Plausible **Stats API** key (Plausible → Settings → API keys). When set, every owner sees the last 30 days of visitors to *their* page on `/account`: totals, a daily chart, top sources and countries. The key never leaves the server; numbers are cached for 5 minutes. |
@@ -176,6 +177,49 @@ On `/admin`, under **Access requests**:
 - **Decline** removes the request from the list.
 
 An invite allows that **email address** to sign up, with a password or with GitHub or GitLab if the account uses the same email. No redeploy or `SIGNUP_ALLOWLIST` change is needed. Once the person signs up, the request is marked *joined*. It's included in their *Download my data* export and deleted with their account.
+
+## Custom domains
+
+With `CUSTOM_DOMAINS=true`, an owner can serve their stage at their own address (`https://peter.dev/`). It's off by default.
+
+1. In **Account → Custom domain**, the owner enters a domain. They get two DNS records to add:
+   - a `CNAME` to your instance's host (for a root domain: ALIAS / ANAME, or Cloudflare's CNAME flattening);
+   - a `TXT` record at `_starring.<domain>` with a value derived from their account.
+2. **Verify** looks up the TXT record. When the value matches, the domain goes live.
+3. On the domain:
+   - `/` serves the stage and `/card` its embed card;
+   - assets load as usual;
+   - every other path redirects to your main site.
+   - The custom domain becomes the stage's **canonical** URL in search, link previews and JSON-LD, including on `/<handle>`.
+4. Removing the domain, unpublishing or a moderator hiding the stage takes it off the domain right away (within ~1 minute because of a cache).
+
+**TLS for domains you don't know in advance.** That's your proxy's job. The app exposes `GET /api/domain/allowed?domain=…`, which returns 200 only for verified domains of live stages, so a proxy can issue certificates on demand without becoming an open certificate factory.
+
+**Caddy** (recommended for custom domains). Put it in front of the app on ports 80 and 443:
+
+```caddyfile
+{
+  on_demand_tls {
+    ask http://app:4321/api/domain/allowed
+  }
+}
+
+starring.example.com {
+  reverse_proxy app:4321
+}
+
+# every other hostname: only verified custom domains get a certificate
+https:// {
+  tls {
+    on_demand
+  }
+  reverse_proxy app:4321
+}
+```
+
+**Traefik (Dokploy, Nomploy)** has no on-demand certificates. For a handful of custom domains, add each one as an extra domain on the `app` service (port 4321, HTTPS on), and the app routes it by host. For many domains, put Caddy in front as shown above.
+
+Set `TRUST_PROXY=true` when a proxy on another host forwards the traffic. The app reads the custom host from `X-Forwarded-Host` or `Host`.
 
 ## Terms, privacy and moderation
 

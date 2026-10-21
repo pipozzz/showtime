@@ -206,7 +206,7 @@ It counts *your* commits in local repos, including client work and a self-hosted
 - [x] Local `starring scan` CLI for private repos, with a real heatmap
 - [x] Server mode: sign up (email, GitHub, GitLab), claim a handle, autosave to Postgres, publish
 - [x] Hosted instance at starring.dev, with a private beta, invites, moderation and owner stats
-- [ ] Custom domains for profiles (`you.dev` → your stage)
+- [x] Custom domains for profiles (`you.dev` → your stage), verified by DNS, with an on-demand TLS check for the proxy
 - [ ] Translations
 
 ### Architecture

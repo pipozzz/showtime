@@ -69,6 +69,9 @@ export const profile = pgTable(
     /** Set by a moderator: the profile is off every public surface and can't be re-published. */
     hiddenAt: timestamp('hidden_at', { withTimezone: true }),
     hiddenReason: text('hidden_reason'),
+    /** The owner's own domain (lowercase hostname), served at its root once verified by DNS TXT. */
+    customDomain: text('custom_domain').unique(),
+    domainVerifiedAt: timestamp('domain_verified_at', { withTimezone: true }),
     ...timestamps,
   },
   (t) => [index('profile_published_idx').on(t.published)],

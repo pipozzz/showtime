@@ -6,6 +6,7 @@ import { and, desc, eq, gt } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { link, pageLink } from '../../lib/url';
 import { ownerStats, statsConfig, type OwnerStats } from '../stats';
+import { domainsEnabled, getDomain } from '../domains';
 
 export const prerender = false;
 
@@ -23,6 +24,7 @@ let stats: OwnerStats | null | 'error' = null;
 if (own?.published && statsConfig()) {
   stats = await ownerStats(pageLink(own.handle)).catch((e) => (console.error('[stats]', e.message), 'error' as const));
 }
+const domain = own && domainsEnabled() ? await getDomain(session.user.id) : null;
 const peak = stats && stats !== 'error' ? Math.max(1, ...stats.daily.map((d) => d.visitors)) : 1;
 /** "Chrome on macOS" from a user agent — good enough to recognise your own devices. */
 const device = (ua?: string | null) => {
@@ -103,6 +105,42 @@ const device = (ua?: string | null) => {
       </section>
     )}
 
+    {domain && (
+      <section class="card" id="domain">
+        <p class="mono muted">Custom domain</p>
+        {domain.domain && domain.verified ? (
+          <>
+            <p class="big"><a href={`https://${domain.domain}/`} target="_blank" rel="noreferrer">{domain.domain} ↗</a> <span class="tag solid">Live</span></p>
+            <p class="muted">Your stage is served at the root of your domain{own?.published ? '' : ' once you publish it'}, and search engines treat it as the main address.</p>
+            <div class="row"><button class="btn ghost" type="button" data-domain="remove">Remove domain</button></div>
+          </>
+        ) : domain.domain ? (
+          <>
+            <p class="big">{domain.domain} <span class="tag">Waiting for DNS</span></p>
+            <p class="muted">Add these two records where you manage DNS for {domain.domain}, then press Verify. Changes can take a few minutes.</p>
+            <table class="dns">
+              <thead><tr><th>Type</th><th>Name</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">CNAME</td><td><code>{domain.domain}</code></td><td><code>{domain.target}</code> <button class="copy" type="button" data-copy={domain.target}>Copy</button></td></tr>
+                <tr><td class="mono">TXT</td><td><code>{domain.txt!.name}</code> <button class="copy" type="button" data-copy={domain.txt!.name}>Copy</button></td><td><code>{domain.txt!.value}</code> <button class="copy" type="button" data-copy={domain.txt!.value}>Copy</button></td></tr>
+              </tbody>
+            </table>
+            <p class="hint">A root domain (peter.dev rather than cv.peter.dev) can't have a CNAME at most providers — use ALIAS / ANAME, or Cloudflare's CNAME flattening. With Cloudflare, keep the record <b>DNS only</b> (grey cloud) so the certificate can be issued.</p>
+            <div class="row">
+              <button class="btn" type="button" data-domain="verify">Verify</button>
+              <button class="btn ghost" type="button" data-domain="remove">Use a different domain</button>
+            </div>
+          </>
+        ) : (
+          <form class="domain-form" novalidate>
+            <p class="muted">Show your stage at your own address, like <b>peter.dev</b> or <b>cv.peter.dev</b>.</p>
+            <div class="row"><input name="domain" placeholder="peter.dev" autocomplete="off" spellcheck="false" aria-label="Your domain" /><button class="btn" type="submit">Connect</button></div>
+          </form>
+        )}
+        <p class="muted" id="domain-status" role="status"></p>
+      </section>
+    )}
+
     {hasPassword && (
       <section class="card">
         <p class="mono muted">Password</p>
@@ -172,6 +210,29 @@ const device = (ua?: string | null) => {
     status.textContent = data.message || 'Could not change the password.';
   });
 
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
+    b.addEventListener('click', () => navigator.clipboard.writeText(b.dataset.copy!).then(() => { b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); })),
+  );
+  // custom domain: connect, verify, remove
+  const domainStatus = document.getElementById('domain-status');
+  const domainCall = async (method: string, body?: object) => {
+    const res = await fetch('/api/domain', { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: body ? JSON.stringify(body) : undefined });
+    if (res.ok) return location.reload();
+    const data = await res.json().catch(() => ({}));
+    if (domainStatus) domainStatus.textContent = data.error || 'That didn’t work — try again.';
+  };
+  document.querySelector<HTMLFormElement>('.domain-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    domainCall('PUT', { domain: new FormData(e.currentTarget as HTMLFormElement).get('domain') });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-domain]').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (b.dataset.domain === 'remove' && !confirm('Disconnect this domain from your stage?')) return;
+      if (domainStatus) domainStatus.textContent = b.dataset.domain === 'verify' ? 'Checking DNS…' : '';
+      domainCall(b.dataset.domain === 'verify' ? 'POST' : 'DELETE');
+    }),
+  );
+
   document.getElementById('others')?.addEventListener('click', async () => {
     const res = await post('revoke-other-sessions');
     if (res.ok) location.reload();
@@ -217,6 +278,15 @@ const device = (ua?: string | null) => {
   .devices { list-style: none; display: grid; gap: 8px; }
   .devices li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .devices .tag { margin-left: 8px; }
+  .dns { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dns th, .dns td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+  .dns td:first-child { white-space: nowrap; }
+  .dns code { font-family: var(--mono); font-size: 12px; text-transform: none; }
+  .copy { font: 11px var(--mono); text-transform: uppercase; background: transparent; color: var(--accent); border: 0; cursor: pointer; padding: 0 2px; }
+  .dns th { color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase; font-weight: 400; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .domain-form input { flex: 1; min-width: 0; background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 12px; }
+  .domain-form input:focus { outline: none; border-color: var(--accent); }
   .nums { display: flex; gap: 32px; flex-wrap: wrap; }
   .nums b { font-size: 44px; font-weight: 400; color: var(--accent); margin-right: 6px; }
   .spark { width: 100%; height: 60px; display: block; }

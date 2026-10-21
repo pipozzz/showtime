@@ -10,6 +10,8 @@ interface Props {
   /** Editor mode: everything visible at once, sections clickable. */
   preview?: boolean;
   onSection?: (id: string) => void;
+  /** Absolute origin of the main site, when the stage is served on its owner's custom domain. */
+  site?: string;
 }
 
 /**
@@ -17,7 +19,9 @@ interface Props {
  * so what you edit is exactly what ships. Sizes use container units (cqi) so
  * the editor's phone preview behaves like a real phone.
  */
-export default function ProfileStory({ p, preview = false, onSection }: Props) {
+export default function ProfileStory({ p, preview = false, onSection, site }: Props) {
+  // on a custom domain, links to Starring itself must point at the main site
+  const at = (path = '') => (site ? new URL(link(path), site).href : link(path));
   const t = totals(p);
   const me = p.profile ?? { name: '', role: '' };
   const [first, ...rest] = (me.name || ' ').split(' ');
@@ -51,7 +55,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
     <div className={`story${preview ? ' is-preview' : ''}`} data-theme={p.theme ?? 'acid'}>
       <header className="hero" {...sec('profile')}>
         <div className="hero-top mono">
-          <a href={link()}>Starring</a>
+          <a href={at()}>Starring</a>
           <span>{me.location}</span>
           {me.available && <span className="tag solid">Available for work</span>}
         </div>
@@ -221,7 +225,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
           {links.map(([k, v]) => <li key={k}><a href={v}>{k} ↗</a></li>)}
         </ul>
         <p className="mono muted">Made with Starring — open source</p>
-        <p className="mono muted legal-links"><a href={link('terms')}>Terms</a> · <a href={link('privacy')}>Privacy</a></p>
+        <p className="mono muted legal-links"><a href={at('terms')}>Terms</a> · <a href={at('privacy')}>Privacy</a></p>
       </footer>
     </div>
   );

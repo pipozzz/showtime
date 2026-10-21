@@ -267,6 +267,45 @@ try {
       as = 'user'; jars.user = saved;
     });
   }
+  // Needs CUSTOM_DOMAINS=true on the server and DATABASE_URL here (DNS can't be faked, so the
+  // test marks the domain verified directly). The custom host arrives as X-Forwarded-Host.
+  if ((await call('GET', '/api/domain')).status !== 404 && process.env.DATABASE_URL) {
+    await step('custom domain: connect, verify (DNS), serve at the root, remove', async () => {
+      const domain = `e2e-${id}.example.org`;
+      const on = { 'X-Forwarded-Host': domain };
+      assert.equal((await call('PUT', '/api/domain', { domain: 'localhost' })).status, 400);
+      const set = await expect(await call('PUT', '/api/domain', { domain: `https://${domain.toUpperCase()}/` }), 200);
+      assert.equal(set.domain, domain);
+      assert.equal(set.verified, false);
+      assert.equal(set.txt.name, `_starring.${domain}`);
+      assert.equal((await call('POST', '/api/domain')).status, 422, 'no TXT record yet');
+      assert.equal((await call('GET', `/api/domain/allowed?domain=${domain}`)).status, 404, 'no certificate before verification');
+      assert.equal((await call('GET', '/', undefined, on)).status, 200);
+      assert.match(await (await call('GET', '/', undefined, on)).text(), /<title>Starring —/, 'an unverified domain just gets the normal home page');
+
+      const { default: postgres } = await import('postgres');
+      const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
+      await sql`update profile set domain_verified_at = now() where custom_domain = ${domain}`;
+      await sql.end();
+      await new Promise((r) => setTimeout(r, 11_000)); // the host cache remembers a miss for 10 s
+
+      assert.equal((await call('GET', `/api/domain/allowed?domain=${domain}`)).status, 200);
+      const root = await call('GET', '/', undefined, on);
+      const html = await expect(root, 200);
+      assert.match(html, /Eve Tester/, 'the stage is served at the root');
+      assert.match(html, new RegExp(`<link rel="canonical" href="https://${domain}/"`), 'canonical is the custom domain');
+      const card = await call('GET', '/card', undefined, on);
+      assert.equal(card.status, 200);
+      assert.match(card.headers.get('content-security-policy') ?? '', /frame-ancestors \*/);
+      const edit = await call('GET', '/edit', undefined, on);
+      assert.equal(edit.status, 301, 'everything else goes to the main site');
+      assert.equal(new URL(edit.headers.get('location')).pathname, '/edit');
+      assert.match(await expect(await call('GET', `/${handle}`), 200), new RegExp(`<link rel="canonical" href="https://${domain}/"`), 'main-site page points at the domain too');
+
+      await expect(await call('DELETE', '/api/domain'), 200);
+      assert.equal((await call('GET', `/api/domain/allowed?domain=${domain}`)).status, 404, 'removed at once');
+    });
+  }
   await step('unpublish hides the page again', async () => {
     assert.equal((await call('PATCH', '/api/profile', { published: false })).status, 200);
     assert.equal((await call('GET', `/${handle}`)).status, 404);

@@ -20,7 +20,12 @@ if (SERVER_MODE) {
   Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
 }
 const profile = p!;
-const url = new URL(pageLink(profile.handle), publicBase(Astro.site, Astro.url)).href;
+// a verified custom domain is the stage's canonical address, wherever it's viewed
+let customDomain = Astro.locals.customDomain ?? null;
+if (SERVER_MODE && !customDomain && /^(1|true|yes)$/i.test(process.env.CUSTOM_DOMAINS ?? '')) {
+  customDomain = await (await import('../server/domains')).domainForHandle(profile.handle);
+}
+const url = customDomain ? `https://${customDomain}/` : new URL(pageLink(profile.handle), publicBase(Astro.site, Astro.url)).href;
 const image = new URL(link(`og/${profile.handle}.png`), publicBase(Astro.site, Astro.url)).href;
 const [first, ...rest] = profile.profile.name.split(' ');
 const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, Astro.url)).href}?url=${encodeURIComponent(url)}&format=json` : undefined;
@@ -33,12 +38,13 @@ const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, A
   type="profile"
   image={image}
   imageAlt={`${profile.profile.name}, ${profile.profile.role} — Starring poster`}
+  canonical={url}
   jsonLd={profileJsonLd(profile, url, image)}
   oembed={oembed}
   profileName={{ first, last: rest.join(' '), username: profile.handle }}
 >
   <main>
-    <ProfileStory p={profile} />
+    <ProfileStory p={profile} site={Astro.locals.customDomain ? publicBase(Astro.site, Astro.url).href : undefined} />
     <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Starring ✎</a>
     {SERVER_MODE && <a class="report-link mono" href={`${link('report')}?h=${profile.handle}`} rel="nofollow">Report</a>}
   </main>

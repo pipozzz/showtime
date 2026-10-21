@@ -35,9 +35,11 @@ const csp = (frameable: boolean) =>
  */
 const redirectHosts = new Set((process.env.REDIRECT_HOSTS ?? '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean));
 const canonical = origin(process.env.SITE_URL) || origin(process.env.BETTER_AUTH_URL);
+const requestHost = (request: Request, url: URL) =>
+  (request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? url.host).split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
 const movedTo = (request: Request, url: URL) => {
   if (!SERVER || !canonical || !redirectHosts.size) return null;
-  const host = (request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? url.host).split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
+  const host = requestHost(request, url);
   if (!redirectHosts.has(host) || host === new URL(canonical).hostname) return null;
   const status = request.method === 'GET' || request.method === 'HEAD' ? 301 : 308;
   return new Response(null, { status, headers: { Location: canonical + url.pathname + url.search, 'Cache-Control': 'public, max-age=86400' } });
@@ -62,13 +64,44 @@ const gzip = (request: Request, res: Response) => {
   return new Response(res.body.pipeThrough(new CompressionStream('gzip')), { status: res.status, statusText: res.statusText, headers });
 };
 
+/**
+ * A verified custom domain (CUSTOM_DOMAINS=true) serves its owner's stage at the root:
+ * / → the stage, /card → its embed card, assets pass through, anything else goes to the main site.
+ * Returns the stage's handle, or null when this isn't a custom-domain request.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const ASSETS = /^\/(_astro|og|brand|fonts)\/|^\/favicon/;
+const customStage = async (request: Request, url: URL) => {
+  if (!SERVER || !/^(1|true|yes)$/i.test(process.env.CUSTOM_DOMAINS ?? '')) return null;
+  const host = requestHost(request, url);
+  const own = canonical ? new URL(canonical).hostname : '';
+  if (!host.includes('.') || host === own || redirectHosts.has(host) || /^[\d.]+$/.test(host) || host.endsWith('.localhost')) return null;
+  const { stageForHost } = await import('./server/domains');
+  const handle = await stageForHost(host);
+  return handle ? { host, handle } : null;
+};
+
 export const onRequest = defineMiddleware(async (ctx, next) => {
   const moved = movedTo(ctx.request, ctx.url);
   if (moved) return moved;
-  const res = await next();
+  // ctx.rewrite() runs the middleware again for the new path: that pass just renders it
+  const rewritten = !!ctx.locals.customDomain;
+  const custom = rewritten ? null : await customStage(ctx.request, ctx.url);
+  let res: Response;
+  if (custom) {
+    const path = ctx.url.pathname.replace(BASE, '') || '/';
+    ctx.locals.customDomain = custom.host;
+    if (path === '/') res = await ctx.rewrite(`${BASE}/${custom.handle}/`);
+    else if (path === '/card' || path === '/card/') res = await ctx.rewrite(`${BASE}/${custom.handle}/card/`);
+    else if (path === '/robots.txt') res = new Response('User-agent: *\nAllow: /\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    else if (ASSETS.test(path)) res = await next();
+    else return new Response(null, { status: 301, headers: { Location: (canonical || '') + ctx.url.pathname + ctx.url.search } });
+  } else {
+    res = await next();
+  }
   if (!SERVER) return res;
-  // embeddable card: /<handle>/card — meant to be framed by other sites
-  const frameable = /^\/[^/]+\/card\/?$/.test(ctx.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), ''));
+  // embeddable card: /<handle>/card — meant to be framed by other sites (or /card on a custom domain)
+  const frameable = /^\/[^/]+\/card\/?$/.test(ctx.url.pathname.replace(BASE, '')) || ((!!custom || rewritten) && /^\/card\/?$/.test(ctx.url.pathname.replace(BASE, '')));
   const h = res.headers;
   if (!h.has('Content-Security-Policy')) h.set('Content-Security-Policy', csp(frameable));
   else if (frameable) h.set('Content-Security-Policy', csp(true));

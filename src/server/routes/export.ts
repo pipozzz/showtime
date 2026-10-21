@@ -36,7 +36,7 @@ export const GET: APIRoute = async ({ request }) => {
     account: { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified, createdAt: user.createdAt, updatedAt: user.updatedAt },
     signInMethods: accounts.map((a) => ({ ...a, provider: a.provider === 'credential' ? 'email + password' : a.provider })),
     sessions,
-    profile: profile ? { handle: profile.handle, published: profile.published, hidden: !!profile.hiddenAt, hiddenReason: profile.hiddenReason, createdAt: profile.createdAt, updatedAt: profile.updatedAt, data: profile.data } : null,
+    profile: profile ? { handle: profile.handle, published: profile.published, hidden: !!profile.hiddenAt, hiddenReason: profile.hiddenReason, customDomain: profile.customDomain, domainVerifiedAt: profile.domainVerifiedAt, createdAt: profile.createdAt, updatedAt: profile.updatedAt, data: profile.data } : null,
     reportsYouFiled: reports,
     accessRequest: accessRequest ?? null,
   };

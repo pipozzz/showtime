@@ -34,6 +34,7 @@ services:
       REDIRECT_HOSTS: ${REDIRECT_HOSTS:-}
       # the app is only reachable through the platform's proxy, so X-Forwarded-For is trustworthy
       TRUST_PROXY: ${TRUST_PROXY:-true}
+      CUSTOM_DOMAINS: ${CUSTOM_DOMAINS:-false}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
       SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}
