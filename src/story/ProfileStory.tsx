@@ -44,7 +44,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
   let act = 0;
   const roman = () => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][act++];
   const Label = ({ children }: { children: string }) => (
-    <div className="act-label mono"><span className="num">Act {roman()}</span><span>{children}</span></div>
+    <h2 className="act-label mono"><span className="num">Act {roman()}</span><span>{children}</span></h2>
   );
 
   return (
@@ -157,7 +157,7 @@ export default function ProfileStory({ p, preview = false, onSection }: Props) {
           <Label>{hasActivity ? 'Every commit counts' : 'Where the code lives'}</Label>
           {hasActivity && latest && (
             <>
-              <h2 className="display big">{latest.year}<span className="muted"> / {n(latest.public + latest.private)} contributions</span></h2>
+              <h3 className="display big">{latest.year}<span className="muted"> / {n(latest.public + latest.private)} contributions</span></h3>
               <div className="heat reveal" role="img" aria-label={`${real ? 'Commits per day' : 'Contribution heatmap'} for ${latest.year}`}>
                 {grid.map((v, i) => <i className={`l${v}`} key={i} />)}
               </div>

@@ -37,10 +37,12 @@ const oembed = SERVER_MODE ? `${new URL(link('oembed'), publicBase(Astro.site, A
   oembed={oembed}
   profileName={{ first, last: rest.join(' '), username: profile.handle }}
 >
-  <ProfileStory p={profile} />
+  <main>
+    <ProfileStory p={profile} />
+    <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Starring ✎</a>
+    {SERVER_MODE && <a class="report-link mono" href={`${link('report')}?h=${profile.handle}`} rel="nofollow">Report</a>}
+  </main>
   <ProfileAnalytics p={profile} />
-  <a class="edit-fab mono" href={link(`edit?from=${profile.handle}`)}>Edit in Starring ✎</a>
-  {SERVER_MODE && <a class="report-link mono" href={`${link('report')}?h=${profile.handle}`} rel="nofollow">Report</a>}
 </Layout>
 
 <style>

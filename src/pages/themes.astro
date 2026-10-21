@@ -9,6 +9,7 @@ const sample = (await store.list())[0];
 const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
 ---
 <Layout title="Themes — Starring" description="Every Starring theme, made by the community.">
+  <main>
   <header class="th-head">
     <a class="mono accent" href={link()}>← Starring</a>
     <h1 class="display">Themes<span class="accent">.</span></h1>
@@ -46,6 +47,7 @@ const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
       </li>
     ))}
   </ul>
+  </main>
 </Layout>
 
 <style>
@@ -70,7 +72,7 @@ const [first, ...rest] = (sample?.profile.name ?? 'Your Name').split(' ');
   .th-impact .display { font-size: 32px; }
   .th-meta { padding: 20px 24px 24px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
   .th-meta a { color: var(--accent); }
-  .th-meta code { background: var(--line); }
+  .th-meta code { background: var(--line); color: var(--fg); }
   .th-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
   .th-actions .btn { color: var(--accent-ink); }
   .th-actions .btn.ghost { color: var(--fg); }

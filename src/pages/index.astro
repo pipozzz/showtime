@@ -21,7 +21,7 @@ if (SERVER_MODE) {
 ---
 {me ? (
 <Layout title={profileTitle(me)} description={profileDescription(me)} theme={me.theme} fonts={[me.theme]} type="profile" image={`og/${me.handle}.png`} jsonLd={profileJsonLd(me, new URL(pageLink(), base).href, new URL(link(`og/${me.handle}.png`), base).href)}>
-  <ProfileStory p={me} />
+  <main><ProfileStory p={me} /></main>
   <ProfileAnalytics p={me} />
 </Layout>
 ) : (
@@ -33,6 +33,7 @@ if (SERVER_MODE) {
         : <><a href={link('explore')}>Explore</a><a href={link('login')}>Sign in</a>{signupOpen ? <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a> : <a class="accent" href={`${link('login')}?mode=request`}>Request access</a>}</>}
     </nav>
   )}
+  <main>
   <header class="landing">
     <p class="mono accent brandline"><img src={link('brand/logo.svg')} alt="Starring" height="34" /><span>Open source · v0.1</span></p>
     <h1 class="display">Now<br /><span class="accent">starring</span></h1>
@@ -86,6 +87,7 @@ if (SERVER_MODE) {
       <li class="reveal"><b class="display accent">03</b><p>Get <span class="mono">starring.dev/you</span>, or self-host the static build anywhere.</p></li>
     </ol>
   </section>
+  </main>
   <footer class="site-foot mono muted">
     <span>Starring — open source</span>
     <a href={link('terms')}>Terms</a>

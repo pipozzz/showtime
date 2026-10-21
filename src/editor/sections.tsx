@@ -41,7 +41,7 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
         </div>
       </div>
 
-      <h4 className="ed-sub">Theme</h4>
+      <h3 className="ed-sub">Theme</h3>
       <div className="ed-themes" role="radiogroup" aria-label="Theme">
         {THEMES.map((t) => {
           const on = (p.theme ?? DEFAULT_THEME) === t.id;
@@ -70,7 +70,7 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
         {getTheme(p.theme).description} <a href={link('themes')} target="_blank" rel="noreferrer">All themes ↗</a>
       </p>
 
-      <h4 className="ed-sub">Links</h4>
+      <h3 className="ed-sub">Links</h3>
       <div className="ed-grid">
         {linkKeys.map((k) => (
           <Text
@@ -88,7 +88,7 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
         ))}
       </div>
 
-      <h4 className="ed-sub">Analytics — your own Plausible</h4>
+      <h3 className="ed-sub">Analytics — your own Plausible</h3>
       <p className="ed-hint">See who visits your stage in your <a href="https://plausible.io" target="_blank" rel="noreferrer">Plausible</a> (cloud or self-hosted). Add a site there, then paste the snippet it gives you — Starring reads the site and server out of it. Only a page view is sent; no script from your Plausible runs on this page.</p>
       <PlausibleSnippet onSite={(site) => up({ analytics: { plausible: site } })} />
       <div className="ed-grid">

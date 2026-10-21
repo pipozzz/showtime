@@ -12,7 +12,7 @@
   border-top: 1px solid var(--line);
   position: relative;
 }
-.story .act-label { display: flex; gap: 16px; align-items: baseline; margin-bottom: 6vh; }
+.story .act-label { display: flex; gap: 16px; align-items: baseline; margin-bottom: 6vh; font-weight: 400; }
 .story .act-label .num { color: var(--accent); }
 
 .hero {
