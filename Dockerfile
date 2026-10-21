@@ -9,11 +9,13 @@ RUN npm run build && npm prune --omit=dev
 
 FROM node:22-alpine
 WORKDIR /app
+# pg_dump/pg_restore for scripts/backup.mjs (the optional backup service runs this same image)
+RUN apk add --no-cache postgresql17-client && mkdir /backups && chown node:node /backups
 ENV NODE_ENV=production STARRING_MODE=server HOST=0.0.0.0 PORT=4321
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
-COPY --from=build /app/scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --from=build /app/scripts/migrate.mjs /app/scripts/backup.mjs ./scripts/
 COPY --from=build /app/package.json ./package.json
 # YAML profiles still work next to DB profiles; mount your own over /app/profiles
 COPY --from=build /app/profiles ./profiles

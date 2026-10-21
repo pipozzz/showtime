@@ -25,7 +25,7 @@ docker compose up -d
 Open `http://localhost:4321` (or the `PORT` you set), click **Create account**, claim a handle, and publish.
 
 - Migrations run on every start (`scripts/migrate.mjs`), so updating is `git pull && docker compose up -d --build`.
-- Postgres data lives in the `starring-db` volume. Back it up with `docker compose exec db pg_dump -U starring starring > backup.sql`.
+- Postgres data lives in the `starring-db` volume. The `backup` service dumps it daily into `starring-backups`. See [Backups](#backups).
 - YAML profiles still work. `./profiles` is mounted read-only, and file handles can't be claimed by users.
 
 ## Dokploy
@@ -55,7 +55,7 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
 3. **Domains** tab: set Service to `app`, Port to `4321` and the host to your domain, and turn HTTPS on (Let's Encrypt). In DNS, point the host at the server with an A record. If it's on Cloudflare, use **DNS only**.
 4. **Deploy.** Migrations run automatically on start. Then open the domain and **create the first account**: on an empty instance it's always allowed, and that account is yours.
 5. **Optional auto-deploy:** copy the compose service's **Deploy webhook** URL into the repository secret `DOKPLOY_DEPLOY_WEBHOOK`. After each `main` push, the image workflow pushes the new image and then triggers the redeploy, so you never deploy an image that's still building.
-6. **Backups:** Postgres data lives in the `starring-db` volume. Add a volume backup in Dokploy, or run `pg_dump` from the `db` container on a schedule.
+6. **Backups** are on by default: the `backup` service dumps the database every day into the `starring-backups` volume and keeps 14. See [Backups](#backups) to restore, and copy that volume off the server too.
 
 To build on the server instead of pulling (for example from a fork without CI), replace `image:` and `pull_policy:` in the compose file with `build: .`.
 
@@ -110,6 +110,33 @@ Check the result with [mail-tester.com](https://www.mail-tester.com): send yours
 | Mail arrives in spam | Missing SPF/DKIM/DMARC, or `MAIL_FROM` on a domain the server can't send for |
 | Nothing arrives, no error | `SMTP_HOST` not set in the running container. Check the log for `SMTP is not configured` |
 
+## Backups
+
+Both compose files run a `backup` service from the same image as the app. It runs `pg_dump` once on start and then every `BACKUP_INTERVAL_HOURS` (default `24`). Each dump goes to the `starring-backups` volume as `starring-YYYYMMDD-HHMMSS.dump` (Postgres custom format, compressed), and the newest `BACKUP_KEEP` (default `14`) are kept. Its healthcheck turns **unhealthy** when the newest dump is more than two intervals old, so a broken backup shows up in Docker, Dokploy or Nomad.
+
+```bash
+docker compose exec backup node scripts/backup.mjs list   # what's there, newest first
+docker compose exec backup node scripts/backup.mjs once   # take one now, e.g. before an upgrade
+```
+
+**Restore.** This replaces the current data with the dump, in a single transaction.
+
+```bash
+docker compose stop app
+docker compose exec backup node scripts/backup.mjs restore starring-20261021-074632.dump
+docker compose start app
+```
+
+On Dokploy or Nomploy, run the same `node scripts/backup.mjs …` commands in the `backup` container's terminal, and stop the `app` service first.
+
+**Keep a copy off the server.** A dump on the same disk protects you from mistakes and bad upgrades, not from losing the server. Copy the volume elsewhere regularly. For example, use Dokploy's volume backups to S3, or a cron on the host:
+
+```bash
+docker run --rm -v <project>_starring-backups:/b -v ~/starring-backups:/out alpine sh -c 'cp -n /b/*.dump /out/'
+```
+
+To restore a dump somewhere else (for example to try it out), any Postgres 17 works: `pg_restore --no-owner -d postgres://… starring-….dump`.
+
 ## Plain Node
 
 ```bash
@@ -145,6 +172,8 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `ADMIN_EMAILS` | none | Comma-separated. These accounts can open `/admin`, hide reported profiles, receive report emails and claim blocked handles. |
 | `BLOCKED_HANDLES` | none | Extra handles nobody may claim, added to the built-in list of brands and "official"-looking words |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
+| `BACKUP_KEEP` | `14` | How many daily dumps the `backup` service keeps. |
+| `BACKUP_INTERVAL_HOURS` | `24` | How often it dumps. |
 | `PLAUSIBLE_API_KEY` | none | A Plausible **Stats API** key (Plausible → Settings → API keys). When set, every owner sees the last 30 days of visitors to *their* page on `/account`: totals, a daily chart, top sources and countries. The key never leaves the server; numbers are cached for 5 minutes. |
 | `PLAUSIBLE_API_HOST` | the `PLAUSIBLE_SRC` host | Where the Stats API lives, if it differs from the script host. |
 | `PLAUSIBLE_SITE_ID` | hostname of `SITE_URL` / `BETTER_AUTH_URL` | The site name in Plausible (e.g. `app.starring.dev`). |
