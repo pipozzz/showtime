@@ -41,9 +41,10 @@ const stats = [
     <style is:inline set:html={themesCss()} />
   </head>
   <body>
+    <main>
     <a class="card" href={stage} target="_top" rel="noopener">
       <span class="kicker">Now starring</span>
-      <span class="name"><span>{first}</span> <span class="accent">{rest.join(' ')}</span></span>
+      <h1 class="name"><span>{first}</span> <span class="accent">{rest.join(' ')}</span></h1>
       <span class="role">{profile.profile.role}</span>
       {stats.length > 0 && (
         <span class="stats">
@@ -52,12 +53,13 @@ const stats = [
       )}
       <span class="cta">View the stage ↗</span>
     </a>
+    </main>
   </body>
 </html>
 
 <style is:global>
   * { box-sizing: border-box; margin: 0; }
-  html, body { height: 100%; background: transparent; }
+  html, body, main { height: 100%; background: transparent; }
   .card {
     display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 240px;
     padding: 22px 24px; text-decoration: none;
@@ -67,7 +69,7 @@ const stats = [
   .card:hover { border-color: var(--accent); }
   .kicker, .cta, .stats i { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
   .kicker, .cta { color: var(--accent); }
-  .name { font-family: var(--display); text-transform: uppercase; font-size: clamp(36px, 12vw, 72px); line-height: .9; }
+  .name { font-weight: inherit; font-family: var(--display); text-transform: uppercase; font-size: clamp(36px, 12vw, 72px); line-height: .9; }
   .accent { color: var(--accent); }
   .role { font-weight: 600; font-size: 17px; }
   .stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: auto; }

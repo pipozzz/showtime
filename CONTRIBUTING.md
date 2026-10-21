@@ -20,6 +20,7 @@ npm run check          # types for .astro / .ts / .tsx
 npm test               # unit tests (node --test)
 npm run check:themes   # theme id, WCAG contrast, scoped CSS
 npm run build          # static build
+npm run test:a11y      # axe-core in headless Chrome: main pages + the sample profile in every theme
 ```
 
 Touching server mode (`src/server/`, auth, the DB)? Also run:
@@ -37,7 +38,7 @@ npm run test:e2e               # sign-up → claim → save → publish → dele
 | --- | --- |
 | `check` | `astro check` (types), theme lint, no whitespace errors |
 | `test` | Unit tests: model, SEO/JSON-LD, GitHub and JSON Resume importers |
-| `build` | Static build, static build under `/starring` (catches hard-coded links), server build |
+| `build` | Static build, **accessibility** (axe-core on the main pages and every theme, 0 violations allowed), static build under `/starring` (catches hard-coded links), server build |
 | `e2e` | Server build against Postgres. Migrations must be committed, then the full account → publish flow runs |
 | `docker` | The self-hosting image builds |
 
@@ -96,7 +97,7 @@ That creates `src/themes/noir/` with two files:
 - **`style.css`** (optional): anything the tokens can't express, such as scanlines, glow, marquee bulbs or italic serifs. Scope every selector to `[data-theme='noir']`. See `vhs/`, `broadway/` and `paper/` for examples.
 
 **Checklist for a theme PR:**
-- Text is readable: `fg` on `bg` and `accentInk` on `accent` pass WCAG AA (4.5:1).
+- Text is readable: `fg` on `bg` and `accentInk` on `accent` pass WCAG AA (4.5:1). `npm run build && npm run test:a11y` checks the whole profile in your theme, including `muted` text and tags, and CI runs it too.
 - It looks right at phone width. Use the editor's phone preview.
 - NDA redaction bars (`redact`) are visible on `bg`.
 - Motion respects `prefers-reduced-motion`.

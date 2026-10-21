@@ -20,6 +20,7 @@
     "check": "astro check",
     "check:themes": "node scripts/check-themes.mjs",
     "test:e2e": "node scripts/e2e.mjs",
+    "test:a11y": "node scripts/a11y.mjs",
     "brand": "node scripts/brand.mjs"
   },
   "dependencies": {
@@ -49,6 +50,7 @@
     "@astrojs/check": "^0.9.11",
     "@types/node": "^22.20.5",
     "@types/nodemailer": "^8.0.2",
+    "axe-core": "^4.10.3",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
