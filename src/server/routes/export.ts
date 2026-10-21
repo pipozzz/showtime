@@ -26,6 +26,7 @@ export const GET: APIRoute = async ({ request }) => {
     .select({ handle: schema.report.handle, reason: schema.report.reason, details: schema.report.details, status: schema.report.status, createdAt: schema.report.createdAt })
     .from(schema.report)
     .where(eq(schema.report.reporterUserId, id));
+  const [pref] = await db.select({ weeklyDigest: schema.emailPref.weeklyDigest }).from(schema.emailPref).where(eq(schema.emailPref.userId, id));
   const [accessRequest] = await db
     .select({ email: schema.accessRequest.email, name: schema.accessRequest.name, link: schema.accessRequest.link, note: schema.accessRequest.note, status: schema.accessRequest.status, createdAt: schema.accessRequest.createdAt, invitedAt: schema.accessRequest.invitedAt, joinedAt: schema.accessRequest.joinedAt })
     .from(schema.accessRequest)
@@ -39,6 +40,7 @@ export const GET: APIRoute = async ({ request }) => {
     profile: profile ? { handle: profile.handle, published: profile.published, hidden: !!profile.hiddenAt, hiddenReason: profile.hiddenReason, customDomain: profile.customDomain, domainVerifiedAt: profile.domainVerifiedAt, createdAt: profile.createdAt, updatedAt: profile.updatedAt, data: profile.data } : null,
     reportsYouFiled: reports,
     accessRequest: accessRequest ?? null,
+    emailPreferences: { weeklyDigest: pref?.weeklyDigest ?? true },
   };
   const day = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(body, null, 2), {

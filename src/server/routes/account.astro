@@ -7,6 +7,7 @@ import { db, schema } from '../db';
 import { link, pageLink } from '../../lib/url';
 import { ownerStats, statsConfig, type OwnerStats } from '../stats';
 import { domainsEnabled, getDomain } from '../domains';
+import { digestEnabled, wantsWeeklyDigest } from '../digest';
 
 export const prerender = false;
 
@@ -24,6 +25,7 @@ let stats: OwnerStats | null | 'error' = null;
 if (own?.published && statsConfig()) {
   stats = await ownerStats(pageLink(own.handle)).catch((e) => (console.error('[stats]', e.message), 'error' as const));
 }
+const weekly = own && digestEnabled() ? await wantsWeeklyDigest(session.user.id) : null;
 const domain = own && domainsEnabled() ? await getDomain(session.user.id) : null;
 const peak = stats && stats !== 'error' ? Math.max(1, ...stats.daily.map((d) => d.visitors)) : 1;
 /** "Chrome on macOS" from a user agent — good enough to recognise your own devices. */
@@ -102,6 +104,14 @@ const device = (ua?: string | null) => {
             )}
           </>
         )}
+      </section>
+    )}
+
+    {weekly !== null && (
+      <section class="card">
+        <p class="mono muted">Email</p>
+        <label class="check"><input type="checkbox" id="weekly" checked={weekly} /> <span>Weekly email: who visited my stage, and where they came from (Mondays)</span></label>
+        <p class="muted" id="weekly-status" role="status"></p>
       </section>
     )}
 
@@ -213,6 +223,12 @@ const device = (ua?: string | null) => {
   document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
     b.addEventListener('click', () => navigator.clipboard.writeText(b.dataset.copy!).then(() => { b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); })),
   );
+  document.getElementById('weekly')?.addEventListener('change', async (e) => {
+    const box = e.currentTarget as HTMLInputElement;
+    const res = await fetch('/api/digest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ weekly: box.checked }) });
+    document.getElementById('weekly-status')!.textContent = res.ok ? (box.checked ? 'On — see you Monday.' : 'Off.') : 'Could not save — try again.';
+    if (!res.ok) box.checked = !box.checked;
+  });
   // custom domain: connect, verify, remove
   const domainStatus = document.getElementById('domain-status');
   const domainCall = async (method: string, body?: object) => {

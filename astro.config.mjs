@@ -31,6 +31,8 @@ const serverRoutes = () => ({
         '/api/access': 'src/server/routes/api-access.ts',
         '/api/domain': 'src/server/routes/api-domain.ts',
         '/api/domain/allowed': 'src/server/routes/domain-allowed.ts',
+        '/api/digest': 'src/server/routes/api-digest.ts',
+        '/api/digest/unsubscribe': 'src/server/routes/digest-unsubscribe.ts',
         '/api/admin': 'src/server/routes/api-admin.ts',
         '/report': 'src/server/routes/report.astro',
         '/admin': 'src/server/routes/admin.astro',

@@ -1,6 +1,6 @@
 // Postgres schema. Better Auth core tables (user, session, account, verification)
 // match better-auth@1.7 getAuthTables(); `profile` is Starring's own.
-import { boolean, index, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
 import type { Profile } from '../../lib/model';
 
 const timestamps = {
@@ -112,4 +112,22 @@ export const accessRequest = pgTable(
     joinedAt: timestamp('joined_at', { withTimezone: true }),
   },
   (t) => [index('access_request_status_idx').on(t.status)],
+);
+
+/** Email preferences. No row = defaults (weekly digest on, when the instance sends it). */
+export const emailPref = pgTable('email_pref', {
+  userId: text('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+  weeklyDigest: boolean('weekly_digest').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One row per owner per week: claimed before sending, so each digest goes out once even with several app replicas. */
+export const digestSent = pgTable(
+  'digest_sent',
+  {
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    week: text('week').notNull(), // the Monday it covers, YYYY-MM-DD
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.week] })],
 );

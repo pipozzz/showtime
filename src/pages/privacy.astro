@@ -51,6 +51,7 @@ const analytics = !!process.env.PLAUSIBLE_SRC;
       <h2>Statistics</h2>
       <p>We count page views with a privacy-friendly, cookieless analytics tool (Plausible). It does not use cookies, does not track you across sites and does not store personal data; IP addresses are only used to compute a daily anonymous count.</p>
       {process.env.PLAUSIBLE_API_KEY && <p>If you publish a profile, you can see these anonymous counts for your own page in your account: visitors per day, where they came from (e.g. LinkedIn) and their countries. Nobody sees who an individual visitor is.</p>}
+      {process.env.PLAUSIBLE_API_KEY && SERVER_MODE && !/^(0|false|no)$/i.test(process.env.WEEKLY_DIGEST ?? '') && <p>Owners of a published profile also get these numbers by email once a week. Every email has a one-click unsubscribe link, and you can turn it off in your account.</p>}
     </>
   )}
 

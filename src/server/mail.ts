@@ -30,19 +30,31 @@ const FROM = env.MAIL_FROM || 'Starring <no-reply@starring.dev>';
 
 export const mailEnabled = !!transport;
 
-interface Mail { to: string; subject: string; heading: string; body: string; action: { label: string; url: string }; footer: string }
+export interface Mail {
+  to: string;
+  subject: string;
+  heading: string;
+  body: string;
+  /** Optional label/value lines under the body (the weekly digest's numbers). */
+  rows?: [string, string][];
+  action: { label: string; url: string };
+  footer: string;
+  /** Extra headers, e.g. List-Unsubscribe. */
+  headers?: Record<string, string>;
+}
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 /** Plain, readable HTML that survives every mail client; text part for the rest. */
-const render = ({ heading, body, action, footer }: Mail) => ({
-  text: `${heading}\n\n${body}\n\n${action.label}: ${action.url}\n\n${footer}\n\n— Starring · https://starring.dev`,
+const render = ({ heading, body, rows = [], action, footer }: Mail) => ({
+  text: `${heading}\n\n${body}\n${rows.length ? `\n${rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n` : ''}\n${action.label}: ${action.url}\n\n${footer}\n\n— Starring · https://starring.dev`,
   html: `<!doctype html><html><body style="margin:0;background:#0a0a0a;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#f2f0e9">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
 <table role="presentation" width="100%" style="max-width:520px">
 <tr><td style="font:700 13px/1 monospace;letter-spacing:3px;color:#d4ff00;padding-bottom:28px">STAR<span style="color:#f2f0e9">RING</span></td></tr>
 <tr><td style="font-size:28px;font-weight:700;line-height:1.2;padding-bottom:16px">${esc(heading)}</td></tr>
 <tr><td style="font-size:16px;line-height:1.6;color:#c9c6bd;padding-bottom:28px">${esc(body)}</td></tr>
+${rows.length ? `<tr><td style="padding-bottom:28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows.map(([k, v]) => `<tr><td style="font:12px monospace;letter-spacing:1px;text-transform:uppercase;color:#8a877e;padding:8px 0;border-bottom:1px solid #2a2926">${esc(k)}</td><td align="right" style="font-size:15px;color:#f2f0e9;padding:8px 0;border-bottom:1px solid #2a2926">${esc(v)}</td></tr>`).join('')}</table></td></tr>` : ''}
 <tr><td style="padding-bottom:28px"><a href="${esc(action.url)}" style="display:inline-block;background:#d4ff00;color:#0a0a0a;text-decoration:none;font:700 14px monospace;letter-spacing:1px;padding:14px 22px">${esc(action.label.toUpperCase())}</a></td></tr>
 <tr><td style="font-size:13px;line-height:1.6;color:#8a877e">${esc(footer)}<br><br>If the button doesn't work, paste this into your browser:<br><span style="word-break:break-all">${esc(action.url)}</span></td></tr>
 </table></td></tr></table></body></html>`,
@@ -58,7 +70,7 @@ export async function sendMail(mail: Mail) {
     }
     return;
   }
-  await transport.sendMail({ from: FROM, to: mail.to, subject: mail.subject, text, html });
+  await transport.sendMail({ from: FROM, to: mail.to, subject: mail.subject, text, html, headers: mail.headers });
 }
 
 export const resetPasswordMail = (to: string, url: string): Mail => ({

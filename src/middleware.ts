@@ -81,7 +81,14 @@ const customStage = async (request: Request, url: URL) => {
   return handle ? { host, handle } : null;
 };
 
+// the weekly digest runs inside the server process; start it with the first request
+let digestStarted = false;
+
 export const onRequest = defineMiddleware(async (ctx, next) => {
+  if (SERVER && !digestStarted && canonical) {
+    digestStarted = true;
+    import('./server/digest').then((m) => m.startDigestScheduler(`${canonical}${BASE}/`)).catch((e) => console.error('[digest]', e.message));
+  }
   const moved = movedTo(ctx.request, ctx.url);
   if (moved) return moved;
   // ctx.rewrite() runs the middleware again for the new path: that pass just renders it

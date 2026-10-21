@@ -48,3 +48,27 @@ test("an owner's numbers come from four filtered queries", async () => {
   await ownerStats('/jane/', get, env);
   assert.equal(bodies.length, before);
 });
+
+test('weekly numbers cover the last full Monday–Sunday and the week before', async () => {
+  const { lastWeeks, weekStats } = await import('./stats');
+  // Wednesday 2026-10-21 → last week is Mon 12 – Sun 18 Oct, the one before 5–11 Oct
+  assert.deepEqual(lastWeeks(new Date('2026-10-21T10:00:00Z')), { week: ['2026-10-12', '2026-10-18'], before: ['2026-10-05', '2026-10-11'] });
+  // on a Monday, "last week" is the one that just ended
+  assert.deepEqual(lastWeeks(new Date('2026-10-19T09:00:00Z')).week, ['2026-10-12', '2026-10-18']);
+  // Sunday still belongs to the current week
+  assert.deepEqual(lastWeeks(new Date('2026-10-25T23:00:00Z')).week, ['2026-10-12', '2026-10-18']);
+
+  const bodies: { date_range: unknown; dimensions?: string[]; metrics: string[] }[] = [];
+  const get = (async (_: string, init: RequestInit) => {
+    const b = JSON.parse(String(init.body));
+    bodies.push(b);
+    const dim = b.dimensions?.[0];
+    const results = dim === 'visit:source' ? [{ dimensions: ['LinkedIn'], metrics: [8] }]
+      : dim === 'visit:country_name' ? [{ dimensions: ['Slovakia'], metrics: [7] }]
+      : b.date_range[0] === '2026-10-12' ? [{ dimensions: [], metrics: [12, 30] }] : [{ dimensions: [], metrics: [10] }];
+    return Response.json({ results });
+  }) as typeof fetch;
+  const s = await weekStats('/jane/', new Date('2026-10-21T10:00:00Z'), get, { PLAUSIBLE_API_KEY: 'k', SITE_URL: 'https://starring.dev' });
+  assert.deepEqual(s, { from: '2026-10-12', to: '2026-10-18', visitors: 12, pageviews: 30, previous: 10, sources: [{ name: 'LinkedIn', visitors: 8 }], countries: [{ name: 'Slovakia', visitors: 7 }] });
+  assert.ok(bodies.every((b) => Array.isArray(b.date_range)), 'explicit date ranges');
+});

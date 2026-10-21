@@ -29,6 +29,13 @@
       "when": 1792607598838,
       "tag": "0003_custom_domains",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792609965942,
+      "tag": "0004_weekly_digest",
+      "breakpoints": true
     }
   ]
 }

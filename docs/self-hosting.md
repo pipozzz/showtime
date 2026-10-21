@@ -150,6 +150,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `NOINDEX` | `false` | `true` adds `noindex` to every page and makes `robots.txt` block everything. Use it for a demo or mirror (e.g. a GitHub Pages copy) of a site that lives elsewhere. |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
 | `PLAUSIBLE_API_KEY` | none | A Plausible **Stats API** key (Plausible → Settings → API keys). When set, every owner sees the last 30 days of visitors to *their* page on `/account`: totals, a daily chart, top sources and countries. The key never leaves the server; numbers are cached for 5 minutes. |
+| `WEEKLY_DIGEST` | on when stats and SMTP are set | Every Monday from 08:00 UTC, owners of live stages get last week's visitors, the trend, top sources and countries by email. It needs `PLAUSIBLE_API_KEY` and SMTP, and `false` turns it off. Each owner can unsubscribe (Account, or the one-click link in every email). It is sent once per owner per week, even with several replicas, and there's no email when a stage had no visitors two weeks running. Admins can send themselves a preview from `/admin`. |
 | `PLAUSIBLE_API_HOST` | the `PLAUSIBLE_SRC` host | Where the Stats API lives, if it differs from the script host. |
 | `PLAUSIBLE_SITE_ID` | hostname of `SITE_URL` / `BETTER_AUTH_URL` | The site name in Plausible (e.g. `starring.dev`). |
 

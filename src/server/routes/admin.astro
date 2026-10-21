@@ -7,6 +7,7 @@ import { link } from '../../lib/url';
 import { listRequests } from '../access';
 import { mailEnabled } from '../mail';
 import { instanceOverview } from '../overview';
+import { digestEnabled } from '../digest';
 
 export const prerender = false;
 const session = await getSession(Astro.request);
@@ -47,6 +48,10 @@ const bars = (series: { day: string; n: number }[]) => {
       ))}
       </div>
     </section>
+
+    {digestEnabled() && (
+      <p class="row digest-row"><button class="btn ghost" type="button" id="digest-preview">Send me last week's digest</button><span class="mono muted" id="digest-status" role="status">Weekly emails go out on Mondays from 08:00 UTC.</span></p>
+    )}
 
     <h2 class="mono">Access requests ({waiting.length})</h2>
     {!mailEnabled && <p class="muted">SMTP isn’t configured, so invites aren’t emailed — copy the link and send it yourself.</p>}
@@ -220,6 +225,14 @@ const bars = (series: { day: string; n: number }[]) => {
     refresh();
   });
   if (list) apply();
+
+  document.getElementById('digest-preview')?.addEventListener('click', async () => {
+    const status = document.getElementById('digest-status')!;
+    status.textContent = 'Sending…';
+    const res = await admin({ action: 'digest-preview' });
+    const data = await res.json().catch(() => ({}));
+    status.textContent = !res.ok ? data.error ?? 'Failed' : data.sent ? `Sent to ${data.to} — ${data.stats.visitors} visitors last week.` : data.reason;
+  });
 
   const any = document.querySelector<HTMLFormElement>('.invite-any')!;
   any.addEventListener('submit', async (e) => {

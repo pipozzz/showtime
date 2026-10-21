@@ -8,6 +8,7 @@ import { isAdmin } from '../blocklist';
 import { fail, json, sameOrigin } from '../http';
 import { moderate } from '../moderation';
 import { AccessError, decline, invite, inviteMany } from '../access';
+import { sendDigestTo } from '../digest';
 import { publicBase } from '../../lib/site';
 
 export const prerender = false;
@@ -23,6 +24,13 @@ export const POST: APIRoute = async ({ request, url, site }) => {
     } catch (e) {
       if (e instanceof AccessError) return fail(400, e.message);
       throw e;
+    }
+  }
+  if (body.action === 'digest-preview') {
+    try {
+      return json(await sendDigestTo(session.user.id, publicBase(site, url).href));
+    } catch (e) {
+      return fail(400, (e as Error).message);
     }
   }
   if (body.action === 'invite-many') {
