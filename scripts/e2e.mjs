@@ -221,7 +221,24 @@ try {
       await expect(await call('POST', '/api/access', { email: guest.toUpperCase() }), 200); // asking twice is fine
       as = 'admin';
       await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Admin', email: ADMIN_EMAIL, password: randomBytes(18).toString('base64url') }), 200);
-      assert.match(await expect(await call('GET', '/admin'), 200), new RegExp(guest));
+      const adminPage = await expect(await call('GET', '/admin'), 200);
+      assert.match(adminPage, new RegExp(guest));
+      assert.match(adminPage, /waiting for an invite/, 'overview numbers');
+      // bulk: two more requests, invited in one call
+      const batch = [`b1-${id}@starring.test`, `b2-${id}@starring.test`];
+      as = 'user'; jars.user = '';
+      // separate visitors behind the proxy: each has its own rate-limit bucket (the server sees 127.0.0.1)
+      for (const [i, e] of batch.entries()) await expect(await call('POST', '/api/access', { email: e }, { 'X-Forwarded-For': `198.51.100.${i + 10}` }), 200);
+      as = 'admin';
+      const page2 = await expect(await call('GET', '/admin'), 200);
+      const ids = batch.map((e) => new RegExp(`data-id="([^"]+)"[^>]*data-search="${e}`).exec(page2)?.[1]);
+      assert.ok(ids.every(Boolean), 'requests are listed with their ids');
+      assert.equal((await call('POST', '/api/admin', { action: 'invite-many', ids: [] })).status, 400);
+      const bulk = await expect(await call('POST', '/api/admin', { action: 'invite-many', ids: [...ids, 'no-such-id'] }), 200);
+      assert.equal(bulk.results.filter((r) => r.url).length, 2, 'both invited');
+      assert.ok(bulk.results.find((r) => r.id === 'no-such-id').error, 'unknown id reported, not fatal');
+      const page3 = await expect(await call('GET', '/admin'), 200);
+      for (const e of batch) assert.doesNotMatch(page3, new RegExp(`data-search="${e}`), 'no longer waiting');
       const inv = await expect(await call('POST', '/api/admin', { action: 'invite', email: guest }), 200);
       assert.match(inv.url, /\/login\?mode=signup&invite=[\w-]{20,}/);
       as = 'user'; jars.user = '';

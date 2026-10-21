@@ -6,6 +6,7 @@ import { REASONS, hiddenProfiles, openReports, type Reason } from '../moderation
 import { link } from '../../lib/url';
 import { listRequests } from '../access';
 import { mailEnabled } from '../mail';
+import { instanceOverview } from '../overview';
 
 export const prerender = false;
 const session = await getSession(Astro.request);
@@ -16,11 +17,36 @@ const hidden = await hiddenProfiles();
 const requests = await listRequests();
 const waiting = requests.filter((r) => r.status === 'pending');
 const invited = requests.filter((r) => r.status === 'invited');
+const o = await instanceOverview();
+/** Which kind of link someone left — the quickest signal that they're a real developer. */
+const linkKind = (l: string | null) => (!l ? 'none' : /github\.com|gitlab\.com|codeberg\.org/i.test(l) ? 'code' : /linkedin\.com/i.test(l) ? 'linkedin' : 'web');
+const bars = (series: { day: string; n: number }[]) => {
+  const max = Math.max(1, ...series.map((d) => d.n));
+  return series.map((d, i) => ({ ...d, x: i * 10, h: d.n ? Math.max(2, (d.n / max) * 36) : 1 }));
+};
 ---
 <Layout title="Admin — Starring" fonts={['acid']} noindex>
   <main class="adm">
     <a class="mono accent back" href={link()}>← Starring</a>
     <h1 class="display">Admin</h1>
+
+    <section class="overview" aria-label="Instance overview">
+      <div><b class="display">{o.users}</b><span class="mono muted">accounts</span></div>
+      <div><b class="display">{o.published}</b><span class="mono muted">published / {o.profiles} profiles</span></div>
+      <div><b class="display accent">{o.pending}</b><span class="mono muted">waiting for an invite</span></div>
+      <div><b class="display">{o.invited}</b><span class="mono muted">invited, not joined</span></div>
+      <div><b class="display">{o.conversion === null ? '—' : `${o.conversion}%`}</b><span class="mono muted">of invites joined</span></div>
+      <div class="trends">
+      {[['Sign-ups', o.signups], ['Access requests', o.requests]].map(([label, series]) => (
+        <figure class="trend">
+          <svg viewBox="0 0 140 38" preserveAspectRatio="none" role="img" aria-label={`${label}, last 14 days: ${(series as typeof o.signups).map((d) => d.n).join(', ')}`}>
+            {bars(series as typeof o.signups).map((d) => <rect x={d.x + 1} width="8" y={38 - d.h} height={d.h} class={d.n ? '' : 'zero'}><title>{d.day}: {d.n}</title></rect>)}
+          </svg>
+          <figcaption class="mono muted">{label as string} · 14 days · {(series as typeof o.signups).reduce((s, d) => s + d.n, 0)}</figcaption>
+        </figure>
+      ))}
+      </div>
+    </section>
 
     <h2 class="mono">Access requests ({waiting.length})</h2>
     {!mailEnabled && <p class="muted">SMTP isn’t configured, so invites aren’t emailed — copy the link and send it yourself.</p>}
@@ -30,9 +56,30 @@ const invited = requests.filter((r) => r.status === 'invited');
     </form>
     <p class="invite-result mono" hidden></p>
     {waiting.length === 0 && <p class="muted">No one is waiting.</p>}
-    <ul class="list">
+    {waiting.length > 0 && (
+      <div class="toolbar" role="group" aria-label="Filter and invite requests">
+        <input type="search" class="q" placeholder="Search email, name, link, note…" aria-label="Search requests" />
+        <select class="kind" aria-label="Link">
+          <option value="">Any link</option>
+          <option value="code">GitHub / GitLab</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="web">Other website</option>
+          <option value="none">No link</option>
+        </select>
+        <select class="sort" aria-label="Order">
+          <option value="old">Oldest first</option>
+          <option value="new">Newest first</option>
+        </select>
+        <label class="check"><input type="checkbox" class="all" /> <span>Select shown</span></label>
+        <button class="btn" type="button" data-bulk disabled>Invite selected</button>
+        <span class="mono muted shown" aria-live="polite"></span>
+      </div>
+    )}
+    <div class="bulk-result" hidden></div>
+    <ul class="list requests" data-mail={mailEnabled ? '1' : undefined}>
       {waiting.map((r) => (
-        <li data-id={r.id}>
+        <li data-id={r.id} data-kind={linkKind(r.link)} data-at={r.createdAt.getTime()} data-search={[r.email, r.name, r.link, r.note].filter(Boolean).join(' ').toLowerCase()}>
+          <label class="pick"><input type="checkbox" aria-label={`Select ${r.email}`} /></label>
           <div><b>{r.name ?? r.email}</b> {r.name && <span class="muted">{r.email}</span>}</div>
           {r.link && <a href={r.link} target="_blank" rel="noreferrer nofollow">{r.link} ↗</a>}
           {r.note && <p class="muted">“{r.note}”</p>}
@@ -113,6 +160,67 @@ const invited = requests.filter((r) => r.status === 'invited');
     }),
   );
 
+  // ---- filter, select, bulk invite ----
+  const list = document.querySelector<HTMLElement>('.requests');
+  const rows = [...(list?.querySelectorAll<HTMLElement>('li') ?? [])];
+  const q = document.querySelector<HTMLInputElement>('.toolbar .q');
+  const kind = document.querySelector<HTMLSelectElement>('.toolbar .kind');
+  const sort = document.querySelector<HTMLSelectElement>('.toolbar .sort');
+  const all = document.querySelector<HTMLInputElement>('.toolbar .all');
+  const bulk = document.querySelector<HTMLButtonElement>('[data-bulk]');
+  const shownEl = document.querySelector<HTMLElement>('.toolbar .shown');
+  const visible = () => rows.filter((r) => !r.hidden && r.isConnected);
+  const picked = () => visible().filter((r) => r.querySelector<HTMLInputElement>('.pick input')?.checked);
+  const refresh = () => {
+    const n = picked().length;
+    if (bulk) { bulk.disabled = !n; bulk.textContent = n ? `Invite ${n} selected` : 'Invite selected'; }
+    if (shownEl) shownEl.textContent = `${visible().length} of ${rows.filter((r) => r.isConnected).length} shown`;
+    if (all) all.checked = !!n && n === visible().length;
+  };
+  const apply = () => {
+    const terms = (q?.value ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+    for (const r of rows) {
+      r.hidden = !(terms.every((t) => r.dataset.search!.includes(t)) && (!kind?.value || r.dataset.kind === kind.value));
+      if (r.hidden) r.querySelector<HTMLInputElement>('.pick input')!.checked = false;
+    }
+    const dir = sort?.value === 'new' ? -1 : 1;
+    rows.sort((a, b) => dir * (Number(a.dataset.at) - Number(b.dataset.at))).forEach((r) => list!.append(r));
+    refresh();
+  };
+  q?.addEventListener('input', apply);
+  kind?.addEventListener('change', apply);
+  sort?.addEventListener('change', apply);
+  list?.addEventListener('change', refresh);
+  all?.addEventListener('change', () => { visible().forEach((r) => (r.querySelector<HTMLInputElement>('.pick input')!.checked = all.checked)); refresh(); });
+  bulk?.addEventListener('click', async () => {
+    const chosen = picked();
+    if (!chosen.length || !confirm(`Invite ${chosen.length} ${chosen.length === 1 ? 'person' : 'people'}${list!.dataset.mail ? ' — each gets an email' : ''}?`)) return;
+    bulk.disabled = true;
+    bulk.textContent = `Inviting ${chosen.length}…`;
+    const res = await admin({ action: 'invite-many', ids: chosen.map((r) => r.dataset.id) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(data.error ?? 'Failed'); return refresh(); }
+    const out = document.querySelector<HTMLElement>('.bulk-result')!;
+    const ok = (data.results as { id: string; email?: string; url?: string; mailed?: boolean; error?: string }[]).filter((r) => !r.error);
+    const bad = data.results.filter((r: { error?: string }) => r.error);
+    ok.forEach((r) => rows.find((x) => x.dataset.id === r.id)?.remove());
+    out.hidden = false;
+    out.replaceChildren();
+    const head = document.createElement('p');
+    head.className = 'mono';
+    head.textContent = `Invited ${ok.length}${ok.some((r) => r.mailed) ? ' — emails sent' : ' — send these links yourself'}${bad.length ? ` · ${bad.length} failed` : ''}.`;
+    out.append(head);
+    if (ok.length) {
+      const links = ok.map((r) => `${r.email}\t${r.url}`).join('\n');
+      const copy = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost', textContent: 'Copy emails + links' });
+      copy.addEventListener('click', () => navigator.clipboard.writeText(links).then(() => (copy.textContent = 'Copied')));
+      out.append(copy);
+    }
+    bad.forEach((r: { id: string; error: string }) => { const p = document.createElement('p'); p.className = 'warn'; p.textContent = `${rows.find((x) => x.dataset.id === r.id)?.dataset.search?.split(' ')[0] ?? r.id}: ${r.error}`; out.append(p); });
+    refresh();
+  });
+  if (list) apply();
+
   const any = document.querySelector<HTMLFormElement>('.invite-any')!;
   any.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -135,17 +243,39 @@ const invited = requests.filter((r) => r.status === 'invited');
   );
 </script>
 
-<style>
+<style is:global>
+  /* global: the invite buttons and results are created in the script below, outside Astro's scoping. This CSS only ships with /admin. */
   .adm { max-width: 860px; margin: 0 auto; padding: 8vh var(--gutter); display: grid; gap: 18px; }
   .back { text-decoration: none; }
-  h1 { font-size: clamp(56px, 9vw, 96px); }
-  h2 { color: var(--accent); margin-top: 24px; }
-  h3 { color: var(--muted); margin-top: 8px; }
+  .adm h1 { font-size: clamp(56px, 9vw, 96px); }
+  .adm h2 { color: var(--accent); margin-top: 24px; }
+  .adm h3 { color: var(--muted); margin-top: 8px; }
   .invite-any { display: flex; gap: 8px; }
   .invite-any input { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 10px 12px; }
   .invite-result, .row { flex-wrap: wrap; align-items: center; overflow-wrap: anywhere; }
   .invite-result a, .row a { color: var(--accent); }
   details { display: grid; gap: 10px; }
+  .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .overview > * { background: var(--bg); padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+  .overview b { font-size: 40px; font-weight: 400; line-height: 1; }
+  .trends { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+  .trend { margin: 0; }
+  .trend svg { width: 100%; height: 38px; display: block; }
+  .trend rect { fill: var(--accent); }
+  .trend rect.zero { fill: var(--line); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0; }
+  .toolbar .q { flex: 1 1 220px; }
+  .toolbar input[type=search], .toolbar select { background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 9px 10px; }
+  .toolbar select option { background: var(--bg); }
+  .check { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+  .check input, .pick input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .requests li { grid-template-columns: auto 1fr; column-gap: 12px; }
+  .requests li > :not(.pick) { grid-column: 2; }
+  .pick { grid-row: 1 / span 5; padding-top: 2px; }
+  .bulk-result[hidden], .requests li[hidden] { display: none; }
+  .bulk-result { border: 1px solid var(--accent); padding: 14px 16px; display: grid; gap: 8px; justify-items: start; }
+  .warn { color: #ff6b5e; }
+  .btn:disabled { opacity: .45; cursor: default; }
   summary { cursor: pointer; }
   .list { list-style: none; display: grid; gap: 10px; }
   .list li { border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; }

@@ -171,6 +171,8 @@ With `ALLOW_SIGNUP=false`, the landing page and `/login` offer **Request access*
 On `/admin`, under **Access requests**:
 - **Invite** sends the person an email with a sign-up link (`/login?mode=signup&invite=…`). The admin page always shows the link too, so you can copy and send it yourself. Without SMTP, that's the only way.
 - **Invite any email** invites someone who never asked.
+- **After a launch:** a toolbar lets you search requests, filter them by the link people left (GitHub/GitLab, LinkedIn, website, none) and sort them oldest or newest first. You can then select every shown row and **invite them all in one go**. Invites are sent one at a time so your SMTP server isn't flooded. Without SMTP you get one *Copy emails + links* list to paste into your mail client.
+- The top of `/admin` shows accounts, published profiles, waiting and invited-but-not-joined requests, how many invites turned into accounts, and sign-ups and access requests per day over the last 14 days.
 - **Decline** removes the request from the list.
 
 An invite allows that **email address** to sign up, with a password or with GitHub or GitLab if the account uses the same email. No redeploy or `SIGNUP_ALLOWLIST` change is needed. Once the person signs up, the request is marked *joined*. It's included in their *Download my data* export and deleted with their account.

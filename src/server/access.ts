@@ -89,4 +89,17 @@ export async function invite(target: { id?: string; email?: unknown }, baseUrl: 
   return { email: row.email, url, mailed };
 }
 
+/** Invite several requests in one go (sequentially, so the SMTP server isn't flooded). */
+export async function inviteMany(ids: string[], baseUrl: string) {
+  const results: ({ id: string; email?: string; url?: string; mailed?: boolean; error?: string })[] = [];
+  for (const id of ids) {
+    try {
+      results.push({ id, ...(await invite({ id }, baseUrl)) });
+    } catch (e) {
+      results.push({ id, error: (e as Error).message });
+    }
+  }
+  return results;
+}
+
 export const decline = (id: string) => db.update(accessRequest).set({ status: 'declined', token: null }).where(eq(accessRequest.id, id));
