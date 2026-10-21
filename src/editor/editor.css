@@ -211,7 +211,7 @@ a.ed-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .dev-tablet .ed-frame { border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 12px #1c1c1a, 0 0 0 13px #333, 0 30px 80px #000; margin-top: 14px; }
 .ed-notch { position: sticky; top: 0; z-index: 5; height: 0; display: flex; justify-content: center; }
 .ed-notch::before { content: ''; width: 110px; height: 28px; background: #000; border-radius: 0 0 16px 16px; }
-.ed-preview-cap { font-size: 11px; padding: 14px 0 4px; position: sticky; bottom: 0; }
+.ed-preview-cap { font-size: 11px; padding: 6px 10px; position: sticky; bottom: 8px; justify-self: center; width: max-content; background: var(--bg); border: 1px solid var(--line); }
 
 /* ---------- import ---------- */
 .ed-link { color: var(--accent) !important; text-decoration: underline; text-underline-offset: 3px; padding: 0 !important; text-align: left; font-size: 14px; }

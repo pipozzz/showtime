@@ -49,7 +49,8 @@
 .client i { color: var(--accent); font-style: normal; padding-left: .4em; }
 @keyframes st-slide { to { transform: translateX(-50%); } }
 .client-list { list-style: none; margin-top: 8vh; }
-.client-list li { display: grid; grid-template-columns: 2fr 1fr auto; gap: 16px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--line); font-size: clamp(18px, 2cqi, 26px); }
+.client-list li { display: grid; grid-template-columns: 2fr 1fr 6em; gap: 16px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--line); font-size: clamp(18px, 2cqi, 26px); }
+.client-list li > :last-child { justify-self: end; }
 
 .timeline { list-style: none; }
 .tl-item { display: grid; grid-template-columns: minmax(180px, 30%) 1fr; gap: 32px; padding: 6vh 0; border-bottom: 1px solid var(--line); }
