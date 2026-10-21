@@ -219,7 +219,7 @@ a.ed-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ed-gh-input:focus-within { border-color: var(--accent); }
 .ed-gh-input > span { padding-left: 12px; font-size: 13px; }
 .ed-gh-input .ed-input { border: 0; padding-left: 2px; }
-.ed-modal-box code { font-family: var(--mono); font-size: 12px; background: var(--line); padding: 1px 4px; }
+.ed-modal-box code { font-family: var(--mono); font-size: 12px; background: var(--line); padding: 1px 4px; color: var(--fg); }
 .ed-modal-box .ed-hint a { color: var(--accent); }
 .ed-menu .ed-menu-gh { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .ed-notes { border: 1px solid var(--accent); padding: 14px 16px; margin-bottom: 24px; background: color-mix(in srgb, var(--accent) 6%, transparent); }
@@ -237,7 +237,7 @@ a.ed-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ed-sources li.done b::after { content: ' ✓'; color: var(--accent); }
 .ed-sources li .muted { font-size: 13px; }
 .ed-sources li a { color: var(--accent); }
-.ed-sources code { font-family: var(--mono); font-size: 12px; background: var(--line); padding: 1px 4px; }
+.ed-sources code { font-family: var(--mono); font-size: 12px; background: var(--line); padding: 1px 4px; color: var(--fg); }
 .ed-inline { display: flex; gap: 6px; }
 .ed-inline .ed-input { width: 150px; padding: 8px 10px; }
 @media (max-width: 640px) { .ed-sources li { grid-template-columns: 1fr; } }
