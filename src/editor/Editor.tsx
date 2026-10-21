@@ -6,8 +6,9 @@ import { importGithub } from '../lib/importers/github';
 import { importJsonResume } from '../lib/importers/jsonresume';
 import { importActivity, isActivityFile } from '../lib/importers/activity';
 import { LINKEDIN_FILES, importLinkedIn, readLinkedInZip, type LinkedInFiles } from '../lib/importers/linkedin';
-import { link } from '../lib/url';
+import { link, pageLink } from '../lib/url';
 import GithubDialog from './GithubDialog';
+import ShareDialog from './ShareDialog';
 import Onboarding from './Onboarding';
 import { useServer, type SyncStatus } from './useServer';
 import { getTheme, hasTheme } from '../themes';
@@ -128,6 +129,7 @@ export default function Editor({ samples }: Props) {
   const [toast, setToast] = useState<{ msg: string; undo?: boolean; id: number } | null>({ msg: initial.source, id: 0 });
   const [saved, setSaved] = useState<'saved' | 'saving' | 'off'>('saved');
   const [importOpen, setImportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [importMode, setImportMode] = useState<'fresh' | 'merge'>('merge');
   const [gh, setGh] = useState<{ open: boolean; user?: string; error?: string; busy?: boolean }>({ open: false });
   const [notes, setNotes] = useState<string[]>([]);
@@ -396,13 +398,16 @@ export default function Editor({ samples }: Props) {
                 type="button"
                 className={`ed-btn${server.own.published ? ' ghost' : ''}`}
                 onClick={async () => {
-                  const r = await server.publish(!server.own!.published);
-                  notify(r.ok ? (server.own!.published ? 'Unpublished — only you can see it' : `Live at /${server.own!.handle}`) : r.error);
+                  const wasLive = server.own!.published;
+                  const r = await server.publish(!wasLive);
+                  if (r.ok && !wasLive) setShareOpen(true);
+                  else notify(r.ok ? 'Unpublished — only you can see it' : r.error);
                 }}
                 title={server.own.published ? 'Click to unpublish' : 'Make your stage public'}
               >
                 {server.own.published ? '● Live' : 'Publish'}
               </button>
+              {server.own.published && <button type="button" className="ed-btn ghost" onClick={() => setShareOpen(true)}>Share</button>}
               <a className="ed-icon ed-avatar" href={link('account')} title={server.me?.user?.email ?? 'Account'} aria-label="Account">
                 {(server.me?.user?.name || server.me?.user?.email || '?').slice(0, 1).toUpperCase()}
               </a>
@@ -500,6 +505,14 @@ export default function Editor({ samples }: Props) {
             }
             return r;
           }}
+        />
+      )}
+      {shareOpen && server.own && (
+        <ShareDialog
+          p={p}
+          url={new URL(pageLink(server.own.handle), location.origin).href}
+          poster={new URL(link(`og/${server.own.handle}.png`), location.origin).href}
+          onClose={() => setShareOpen(false)}
         />
       )}
       {gh.open && <GithubDialog current={p} initialUser={gh.user} initialError={gh.error} onDone={imported} onClose={() => setGh({ open: false })} />}

@@ -34,7 +34,7 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
           value={p.handle}
           onChange={(h) => up({ handle: h.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
           error={issues.handle}
-          hint={`starring.dev/${p.handle}`}
+          hint={`${location.host}${link(p.handle)}`}
         />
         <div className="wide">
           <Toggle label="Available for work" hint="Shows a badge in the hero" checked={me.available} onChange={(available) => set({ available })} />
