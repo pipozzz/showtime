@@ -56,7 +56,7 @@ services:
       MAIL_FROM: ${MAIL_FROM:-Starring <no-reply@starring.dev>}
       REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4321/ >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4321/api/health >/dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5

@@ -69,6 +69,20 @@ try {
   await step('home, themes, robots and sitemap respond', async () => {
     for (const p of ['/', '/themes', '/explore', '/terms', '/privacy', '/robots.txt', '/sitemap.xml', '/og.png']) assert.equal((await call('GET', p)).status, 200, p);
   });
+  await step('health check, security headers, branded 404', async () => {
+    const health = await expect(await call('GET', '/api/health'), 200);
+    assert.equal(health.db, true);
+    const home = await call('GET', '/');
+    assert.match(home.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
+    assert.equal(home.headers.get('x-frame-options'), 'DENY');
+    assert.equal(home.headers.get('x-content-type-options'), 'nosniff');
+    const card = await call('GET', '/nova/card/');
+    assert.match(card.headers.get('content-security-policy') ?? '', /frame-ancestors \*/, 'embed card stays frameable');
+    assert.equal(card.headers.get('x-frame-options'), null);
+    const missing = await call('GET', '/no-such-stage-xyz');
+    assert.equal(missing.status, 404);
+    assert.match(await missing.text(), /Empty stage/);
+  });
   await step('API refuses anonymous writes (401) and cross-origin writes (403)', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle, data: profile })).status, 401);
     assert.equal((await call('PUT', '/api/profile', { handle, data: profile }, { Origin: 'https://evil.example' })).status, 403);

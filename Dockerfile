@@ -20,5 +20,5 @@ COPY --from=build /app/profiles ./profiles
 COPY --from=build /app/examples ./examples
 USER node
 EXPOSE 4321
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD wget -qO- http://127.0.0.1:4321/ >/dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD wget -qO- http://127.0.0.1:4321/api/health >/dev/null || exit 1
 CMD ["sh", "-c", "node scripts/migrate.mjs && node dist/server/entry.mjs"]

@@ -1,0 +1,27 @@
+---
+import Layout from './Layout.astro';
+import { link } from '../lib/url';
+
+interface Props { code: string; title: string; line: string }
+const { code, title, line } = Astro.props;
+---
+<Layout title={`${title} — Starring`} fonts={['acid']} noindex>
+  <main class="err">
+    <p class="mono accent">Error {code}</p>
+    <h1 class="display">{title.split(' ')[0]}<br /><span class="accent">{title.split(' ').slice(1).join(' ')}</span></h1>
+    <p class="line">{line}</p>
+    <div class="row">
+      <a class="btn" href={link()}>Back to the lobby</a>
+      <a class="btn ghost" href={link('explore')}>Explore stages</a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .err { min-height: 100svh; display: grid; align-content: center; gap: 22px; padding: 10vh var(--gutter); max-width: 900px; }
+  h1 { font-size: clamp(72px, min(15vw, 26svh), 220px); line-height: .95; }
+  .line { font-size: clamp(18px, 2vw, 24px); max-width: 40ch; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { font-family: var(--mono); text-transform: uppercase; letter-spacing: .05em; font-size: 13px; padding: 14px 20px; background: var(--accent); color: var(--accent-ink); text-decoration: none; }
+  .btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+</style>

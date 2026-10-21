@@ -149,6 +149,8 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 
 - Passwords are hashed by [Better Auth](https://www.better-auth.com). Sessions are HTTP-only cookies.
 - Auth endpoints are rate-limited (30 requests per minute per IP).
+- Every response carries security headers: a Content-Security-Policy that allows scripts only from this site (plus your `PLAUSIBLE_SRC` host), `X-Frame-Options: DENY` (except the embeddable `/<handle>/card`), `nosniff`, a strict Referrer-Policy and, behind HTTPS, HSTS.
+- **Health check:** `GET /api/health` returns `200 {"ok":true,"db":true}` when the app can reach Postgres, and `503` when it can't. The Docker image and `docker-compose.dokploy.yml` use it, so Nomad and Dokploy restart a container that has lost its database.
 - Profile writes require a session and are rejected from other origins.
 - Profiles are validated on the server (same rules as the editor) and capped at 200 KB.
 - Unpublished profiles return 404 to everyone, including search engines.

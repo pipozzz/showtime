@@ -17,6 +17,7 @@ const serverRoutes = () => ({
       const routes = {
         '/api/auth/[...all]': 'src/server/routes/auth.ts',
         '/api/me': 'src/server/routes/me.ts',
+        '/api/health': 'src/server/routes/health.ts',
         '/api/me/export': 'src/server/routes/export.ts',
         '/api/profile': 'src/server/routes/profile.ts',
         '/api/handle': 'src/server/routes/handle.ts',
