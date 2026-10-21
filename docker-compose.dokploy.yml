@@ -32,6 +32,8 @@ services:
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       SITE_URL: ${SITE_URL:-}
       REDIRECT_HOSTS: ${REDIRECT_HOSTS:-}
+      # the app is only reachable through the platform's proxy, so X-Forwarded-For is trustworthy
+      TRUST_PROXY: ${TRUST_PROXY:-true}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
       SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}
