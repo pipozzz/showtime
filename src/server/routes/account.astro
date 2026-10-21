@@ -2,6 +2,8 @@
 import Layout from '../../components/Layout.astro';
 import { getSession, instance } from '../auth';
 import { getByUser } from '../profiles';
+import { and, desc, eq, gt } from 'drizzle-orm';
+import { db, schema } from '../db';
 import { link } from '../../lib/url';
 
 export const prerender = false;
@@ -9,6 +11,19 @@ export const prerender = false;
 const session = await getSession(Astro.request);
 if (!session) return Astro.redirect(`${link('login')}?next=${encodeURIComponent(link('account'))}`);
 const own = await getByUser(session.user.id);
+const hasPassword = (await db.select({ p: schema.account.providerId }).from(schema.account).where(eq(schema.account.userId, session.user.id))).some((a) => a.p === 'credential');
+const devices = await db
+  .select({ token: schema.session.token, createdAt: schema.session.createdAt, ip: schema.session.ipAddress, ua: schema.session.userAgent })
+  .from(schema.session)
+  .where(and(eq(schema.session.userId, session.user.id), gt(schema.session.expiresAt, new Date())))
+  .orderBy(desc(schema.session.createdAt));
+/** "Chrome on macOS" from a user agent — good enough to recognise your own devices. */
+const device = (ua?: string | null) => {
+  if (!ua) return 'Unknown device';
+  const b = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : /curl|node|undici/i.test(ua) ? 'Script' : 'Browser';
+  const o = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+  return o ? `${b} on ${o}` : b;
+};
 ---
 <Layout title="Account — Starring" fonts={['acid']} noindex>
   <main class="acct">
@@ -46,11 +61,38 @@ const own = await getByUser(session.user.id);
       )}
     </section>
 
+    {hasPassword && (
+      <section class="card">
+        <p class="mono muted">Password</p>
+        <form id="pw" class="pw" novalidate>
+          <input name="current" type="password" autocomplete="current-password" placeholder="Current password" required />
+          <input name="next" type="password" autocomplete="new-password" placeholder="New password (10+ characters)" minlength="10" required />
+          <label class="check"><input type="checkbox" name="others" checked /> Sign out my other devices</label>
+          <div class="row"><button class="btn ghost" type="submit">Change password</button><span class="muted" id="pw-status" aria-live="polite"></span></div>
+        </form>
+      </section>
+    )}
+
     <section class="card">
-      <p class="mono muted">Session</p>
+      <p class="mono muted">Signed in on {devices.length} device{devices.length === 1 ? '' : 's'}</p>
+      <ul class="devices">
+        {devices.map((d) => (
+          <li>
+            <span>{device(d.ua)}{d.token === session.session.token && <span class="tag solid">This device</span>}</span>
+            <span class="muted mono">{d.createdAt.toLocaleDateString('en')}{d.ip ? ` · ${d.ip}` : ''}</span>
+          </li>
+        ))}
+      </ul>
       <div class="row">
+        {devices.length > 1 && <button class="btn ghost" id="others" type="button">Sign out other devices</button>}
         <button class="btn ghost" id="signout" type="button">Sign out</button>
       </div>
+    </section>
+
+    <section class="card">
+      <p class="mono muted">Your data</p>
+      <p class="muted">Everything this site stores about you — account, sign-in methods, devices, profile and reports you filed — as one JSON file. To move your profile elsewhere, use <a href={link('edit')}>Export .yaml</a> in the editor.</p>
+      <div class="row"><a class="btn ghost" href="/api/me/export" download>Download my data</a></div>
     </section>
 
     <section class="card danger">
@@ -74,6 +116,23 @@ const own = await getByUser(session.user.id);
     b.disabled = true;
     const res = await post('send-verification-email', { email: b.dataset.email, callbackURL: location.pathname });
     document.getElementById('verify-status')!.textContent = res.ok ? 'Sent — check your inbox.' : 'Could not send. Try again in a minute.';
+  });
+
+  document.getElementById('pw')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget as HTMLFormElement);
+    const status = document.getElementById('pw-status')!;
+    const newPassword = String(f.get('next') ?? '');
+    if (newPassword.length < 10) { status.textContent = 'Use at least 10 characters.'; return; }
+    const res = await post('change-password', { currentPassword: f.get('current'), newPassword, revokeOtherSessions: f.get('others') === 'on' });
+    if (res.ok) { (e.currentTarget as HTMLFormElement).reset(); status.textContent = 'Password changed.'; return; }
+    const data = await res.json().catch(() => ({}));
+    status.textContent = data.message || 'Could not change the password.';
+  });
+
+  document.getElementById('others')?.addEventListener('click', async () => {
+    const res = await post('revoke-other-sessions');
+    if (res.ok) location.reload();
   });
 
   document.getElementById('signout')!.addEventListener('click', async () => {
@@ -107,4 +166,13 @@ const own = await getByUser(session.user.id);
   .danger { border-color: #5a1d18; }
   .danger .btn.ghost { color: #ff6b5e; box-shadow: inset 0 0 0 1px #5a1d18; }
   .error, .warn { color: #ff6b5e; }
+  .card a:not(.btn) { color: var(--accent); }
+  .pw { display: grid; gap: 10px; }
+  .pw input[type=password] { background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 12px; }
+  .pw input:focus { outline: none; border-color: var(--accent); }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+  .check input { accent-color: var(--accent); }
+  .devices { list-style: none; display: grid; gap: 8px; }
+  .devices li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .devices .tag { margin-left: 8px; }
 </style>

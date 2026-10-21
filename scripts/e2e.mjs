@@ -104,6 +104,23 @@ try {
       password = newPassword;
     });
   }
+  await step('change password (wrong current one fails) and download my data', async () => {
+    const next = randomBytes(18).toString('base64url');
+    assert.notEqual((await call('POST', '/api/auth/change-password', { currentPassword: 'wrong-password-123', newPassword: next })).status, 200);
+    await expect(await call('POST', '/api/auth/change-password', { currentPassword: password, newPassword: next, revokeOtherSessions: true }), 200);
+    password = next;
+    assert.equal((await call('GET', '/account')).status, 200, 'still signed in on this device');
+    const res = await call('GET', '/api/me/export');
+    assert.match(res.headers.get('content-disposition') ?? '', /attachment; filename="starring-data-/);
+    const data = await expect(res, 200);
+    assert.equal(data.account.email, email);
+    assert.ok(data.sessions.length >= 1);
+    const raw = JSON.stringify(data);
+    for (const leak of ['accessToken', 'refreshToken', 'idToken', '"password"', '$argon', 'scrypt']) assert.ok(!raw.includes(leak), `export must not include ${leak}`);
+    const anon = jars.user; jars.user = '';
+    assert.equal((await call('GET', '/api/me/export')).status, 401);
+    jars.user = anon;
+  });
   await step('reserved and file-owned handles are rejected', async () => {
     assert.equal((await call('PUT', '/api/profile', { handle: 'edit', data: profile })).status, 409);
     assert.equal((await call('PUT', '/api/profile', { handle: 'google', data: profile })).status, 409, 'brand handles are blocked');
