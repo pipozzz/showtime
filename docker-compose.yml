@@ -35,29 +35,5 @@ services:
       timeout: 3s
       retries: 20
 
-  # Daily pg_dump into the starring-backups volume (14 kept). Same image as the app.
-  #   docker compose exec backup node scripts/backup.mjs list
-  backup:
-    image: starring:latest
-    restart: unless-stopped
-    command: ["node", "scripts/backup.mjs"]
-    environment:
-      DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD:-starring}@db:5432/starring
-      BACKUP_KEEP: ${BACKUP_KEEP:-14}
-      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
-    volumes:
-      - starring-backups:/backups
-    healthcheck:
-      test: ["CMD", "node", "scripts/backup.mjs", "check"]
-      interval: 1h
-      timeout: 10s
-      start_period: 5m
-    depends_on:
-      app:
-        condition: service_started
-      db:
-        condition: service_healthy
-
 volumes:
   starring-db:
-  starring-backups:

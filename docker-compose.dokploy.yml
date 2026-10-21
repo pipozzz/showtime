@@ -83,28 +83,5 @@ services:
       timeout: 3s
       retries: 30
 
-  # Daily pg_dump into the starring-backups volume, 14 kept. Same image as the app.
-  # Restore: stop app, then run `node scripts/backup.mjs restore <file>` in this container.
-  backup:
-    image: ghcr.io/pipozzz/starring:${STARRING_IMAGE_TAG:-latest}
-    pull_policy: always
-    restart: unless-stopped
-    command: ["node", "scripts/backup.mjs"]
-    environment:
-      DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD}@db:5432/starring
-      BACKUP_KEEP: ${BACKUP_KEEP:-14}
-      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
-    volumes:
-      - starring-backups:/backups
-    healthcheck:
-      test: ["CMD", "node", "scripts/backup.mjs", "check"]
-      interval: 1h
-      timeout: 10s
-      start_period: 5m
-    depends_on:
-      db:
-        condition: service_healthy
-
 volumes:
   starring-db:
-  starring-backups:
