@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { THIS_YEAR, type Issues, type Profile } from '../lib/model';
+import { resolveSnippet } from '../lib/plausible';
 import { link } from '../lib/url';
 import { DEFAULT_THEME, THEMES, getTheme } from '../themes';
 import ListEditor from './ListEditor';
@@ -87,7 +89,8 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
       </div>
 
       <h4 className="ed-sub">Analytics — your own Plausible</h4>
-      <p className="ed-hint">See who visits your stage in your <a href="https://plausible.io" target="_blank" rel="noreferrer">Plausible</a> (cloud or self-hosted). Add a site there first, then enter its name here. Self-hosted? Put its https:// address below (a sub-path like https://example.com/plausible works too). Only a page view is sent — no script from your Plausible runs on this page.</p>
+      <p className="ed-hint">See who visits your stage in your <a href="https://plausible.io" target="_blank" rel="noreferrer">Plausible</a> (cloud or self-hosted). Add a site there, then paste the snippet it gives you — Starring reads the site and server out of it. Only a page view is sent; no script from your Plausible runs on this page.</p>
+      <PlausibleSnippet onSite={(site) => up({ analytics: { plausible: site } })} />
       <div className="ed-grid">
         <Text
           label="Plausible site"
@@ -106,6 +109,31 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
         />
       </div>
     </>
+  );
+}
+
+/** Paste Plausible's install snippet → fills the site and server fields below. */
+function PlausibleSnippet({ onSite }: { onSite: (site: { domain: string; host?: string }) => void }) {
+  const [text, setText] = useState('');
+  const [state, setState] = useState<{ busy?: boolean; ok?: string; error?: string }>({});
+  const read = async (value: string) => {
+    if (!value.trim()) return setState({});
+    setState({ busy: true });
+    const r = await resolveSnippet(value);
+    if ('error' in r) return setState({ error: r.error });
+    onSite(r.site);
+    setState({ ok: `Found ${r.site.domain} on ${r.site.host ?? 'plausible.io'}` });
+  };
+  return (
+    <Area
+      label="Plausible snippet"
+      wide
+      value={text}
+      placeholder={'<script async src="https://plausible.io/js/pa-….js"></script>…'}
+      error={state.error}
+      hint={state.busy ? 'Reading…' : state.ok ? `✓ ${state.ok}` : 'Paste it here — or fill in the two fields below by hand'}
+      onChange={(v) => { setText(v); void read(v); }}
+    />
   );
 }
 
