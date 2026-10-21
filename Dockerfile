@@ -18,6 +18,9 @@ COPY --from=build /app/package.json ./package.json
 # YAML profiles still work next to DB profiles; mount your own over /app/profiles
 COPY --from=build /app/profiles ./profiles
 COPY --from=build /app/examples ./examples
+# The commit this image was built from (set by .github/workflows/image.yml); shown by /api/health
+ARG STARRING_VERSION=dev
+ENV STARRING_VERSION=$STARRING_VERSION
 USER node
 EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD wget -qO- http://127.0.0.1:4321/api/health >/dev/null || exit 1
