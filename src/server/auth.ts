@@ -1,7 +1,8 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
+import { isInvited, markJoined } from './access';
 import { db, schema } from './db';
 import { mailEnabled, resetPasswordMail, sendMail, verifyEmailMail } from './mail';
 
@@ -27,18 +28,22 @@ if (!env.BETTER_AUTH_SECRET && env.NODE_ENV === 'production') {
 
 /**
  * Sign-up policy: open when ALLOW_SIGNUP is on; otherwise only the very first account
- * (the instance owner) and emails on SIGNUP_ALLOWLIST.
+ * (the instance owner), emails on SIGNUP_ALLOWLIST and emails an admin invited from /admin.
  */
 export const canSignUp = async (email: string) => {
   if (instance.allowSignup) return true;
   if (instance.signupAllowlist.includes(email.trim().toLowerCase())) return true;
+  if (await isInvited(email)) return true;
   const [{ n }] = await db.select({ n: count() }).from(schema.user);
   return n === 0;
 };
 
-/** Whether to offer the sign-up form at all (the hook above still decides per email). */
+/**
+ * Whether sign-up is open to anyone right now (else visitors are offered "request access";
+ * allowlisted and invited people still reach the form through ?mode=signup / their invite link).
+ */
 export const signupOffered = async () => {
-  if (instance.allowSignup || instance.signupAllowlist.length) return true;
+  if (instance.allowSignup) return true;
   const [{ n }] = await db.select({ n: count() }).from(schema.user);
   return n === 0;
 };
@@ -74,14 +79,25 @@ export const auth = betterAuth({
       },
     }),
   },
-  user: { deleteUser: { enabled: true } },
+  user: {
+    deleteUser: {
+      enabled: true,
+      // the private-beta request that led to this account goes with it
+      afterDelete: async (user) => {
+        await db.delete(schema.accessRequest).where(eq(schema.accessRequest.email, user.email.toLowerCase()));
+      },
+    },
+  },
   // Who may create an account — enforced for email and OAuth sign-ups alike.
   databaseHooks: {
     user: {
       create: {
         before: async (user) => {
           if (await canSignUp(user.email)) return;
-          throw new APIError('FORBIDDEN', { message: 'Sign-ups are closed on this instance.' });
+          throw new APIError('FORBIDDEN', { message: 'Sign-ups are closed on this instance — request access instead.' });
+        },
+        after: async (user) => {
+          await markJoined(user.email);
         },
       },
     },

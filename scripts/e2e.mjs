@@ -27,13 +27,18 @@ const jars = { user: '', admin: '' };
 let as = 'user';
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 
-const call = async (method, path, body, headers = {}) => {
+const call = async (method, path, body, headers = {}, retry = true) => {
   const res = await fetch(BASE + path, {
     method,
     redirect: 'manual',
     headers: { Origin: ORIGIN, ...(body && { 'Content-Type': 'application/json' }), ...(jars[as] && { Cookie: jars[as] }), ...headers },
     body: body ? JSON.stringify(body) : undefined,
   });
+  // Better Auth allows ~3 sign-ups/sign-ins per 10 s per IP; this script makes several in a row
+  if (res.status === 429 && retry && path.startsWith('/api/auth/')) {
+    await new Promise((r) => setTimeout(r, 11_000));
+    return call(method, path, body, headers, false);
+  }
   const set = res.headers.getSetCookie?.() ?? [];
   if (set.length) jars[as] = set.map((c) => c.split(';')[0]).join('; ');
   return res;
@@ -192,6 +197,41 @@ try {
       await expect(await call('POST', '/api/auth/delete-user', {}), 200);
       as = 'user';
       await expect(await call('PATCH', '/api/profile', { published: true }), 200);
+    });
+  }
+  await step('request access: validation, honeypot, cross-origin', async () => {
+    const saved = jars.user; jars.user = '';
+    assert.equal((await call('POST', '/api/access', { email: 'not-an-email' })).status, 400);
+    assert.equal((await call('POST', '/api/access', { email: `x-${id}@starring.test`, link: 'javascript:alert(1)' })).status, 400);
+    assert.equal((await call('POST', '/api/access', { email: `x-${id}@starring.test` }, { Origin: 'https://evil.example' })).status, 403);
+    assert.equal((await expect(await call('POST', '/api/access', { email: `bot-${id}@starring.test`, website: 'spam' }), 200)).status, 'pending');
+    assert.equal((await call('GET', '/login?mode=request')).status, 200);
+    jars.user = saved;
+  });
+  if (ADMIN_EMAIL) {
+    await step('private beta: request → admin invites → invited email signs up', async () => {
+      const guest = `guest-${id}@starring.test`;
+      const saved = jars.user; jars.user = '';
+      const asked = await expect(await call('POST', '/api/access', { email: guest, name: 'Gus Guest', link: 'https://github.com/example', note: 'e2e' }), 200);
+      assert.equal(asked.status, 'pending');
+      await expect(await call('POST', '/api/access', { email: guest.toUpperCase() }), 200); // asking twice is fine
+      as = 'admin';
+      await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Admin', email: ADMIN_EMAIL, password: randomBytes(18).toString('base64url') }), 200);
+      assert.match(await expect(await call('GET', '/admin'), 200), new RegExp(guest));
+      const inv = await expect(await call('POST', '/api/admin', { action: 'invite', email: guest }), 200);
+      assert.match(inv.url, /\/login\?mode=signup&invite=[\w-]{20,}/);
+      as = 'user'; jars.user = '';
+      assert.equal((await call('POST', '/api/admin', { action: 'invite', email: 'x@starring.test' })).status, 403, 'only admins invite');
+      const page = await expect(await call('GET', new URL(inv.url).pathname + new URL(inv.url).search), 200);
+      assert.match(page, new RegExp(`value="${guest}"`), 'invite link pre-fills the email');
+      await expect(await call('POST', '/api/auth/sign-up/email', { name: 'Gus Guest', email: guest, password: randomBytes(18).toString('base64url') }), 200);
+      const data = await expect(await call('GET', '/api/me/export'), 200);
+      assert.equal(data.accessRequest.status, 'joined');
+      await expect(await call('POST', '/api/auth/delete-user', {}), 200);
+      as = 'admin';
+      assert.doesNotMatch(await expect(await call('GET', '/admin'), 200), new RegExp(guest), 'request removed with the account');
+      await expect(await call('POST', '/api/auth/delete-user', {}), 200);
+      as = 'user'; jars.user = saved;
     });
   }
   await step('unpublish hides the page again', async () => {

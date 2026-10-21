@@ -4,6 +4,8 @@ import { getSession } from '../auth';
 import { isAdmin } from '../blocklist';
 import { REASONS, hiddenProfiles, openReports, type Reason } from '../moderation';
 import { link } from '../../lib/url';
+import { listRequests } from '../access';
+import { mailEnabled } from '../mail';
 
 export const prerender = false;
 const session = await getSession(Astro.request);
@@ -11,13 +13,54 @@ if (!session) return Astro.redirect(`${link('login')}?next=${encodeURIComponent(
 if (!isAdmin(session.user.email)) return new Response('Admins only — add your email to ADMIN_EMAILS', { status: 403 });
 const reports = await openReports();
 const hidden = await hiddenProfiles();
+const requests = await listRequests();
+const waiting = requests.filter((r) => r.status === 'pending');
+const invited = requests.filter((r) => r.status === 'invited');
 ---
 <Layout title="Admin — Starring" fonts={['acid']} noindex>
   <main class="adm">
     <a class="mono accent back" href={link()}>← Starring</a>
-    <h1 class="display">Moderation</h1>
+    <h1 class="display">Admin</h1>
 
-    <h2 class="mono">Open reports ({reports.length})</h2>
+    <h2 class="mono">Access requests ({waiting.length})</h2>
+    {!mailEnabled && <p class="muted">SMTP isn’t configured, so invites aren’t emailed — copy the link and send it yourself.</p>}
+    <form class="invite-any">
+      <input name="email" type="email" placeholder="Invite any email…" required />
+      <button class="btn" type="submit">Invite</button>
+    </form>
+    <p class="invite-result mono" hidden></p>
+    {waiting.length === 0 && <p class="muted">No one is waiting.</p>}
+    <ul class="list">
+      {waiting.map((r) => (
+        <li data-id={r.id}>
+          <div><b>{r.name ?? r.email}</b> {r.name && <span class="muted">{r.email}</span>}</div>
+          {r.link && <a href={r.link} target="_blank" rel="noreferrer nofollow">{r.link} ↗</a>}
+          {r.note && <p class="muted">“{r.note}”</p>}
+          <p class="mono muted">{r.createdAt.toLocaleString('en')}</p>
+          <div class="row">
+            <button class="btn" data-access="invite">Invite</button>
+            <button class="btn ghost" data-access="decline">Decline</button>
+          </div>
+        </li>
+      ))}
+    </ul>
+    {invited.length > 0 && (
+      <details>
+        <summary class="mono muted">Invited, not joined yet ({invited.length})</summary>
+        <ul class="list">
+          {invited.map((r) => (
+            <li data-id={r.id}>
+              <div>{r.email} <span class="muted mono">invited {r.invitedAt?.toLocaleDateString('en')}</span></div>
+              <div class="row"><button class="btn ghost" data-access="invite">{mailEnabled ? 'Resend invite' : 'Show link'}</button></div>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+
+    <h2 class="mono">Moderation</h2>
+
+    <h3 class="mono">Open reports ({reports.length})</h3>
     {reports.length === 0 && <p class="muted">Nothing to review.</p>}
     <ul class="list">
       {reports.map((r) => (
@@ -33,7 +76,7 @@ const hidden = await hiddenProfiles();
       ))}
     </ul>
 
-    <h2 class="mono">Hidden profiles ({hidden.length})</h2>
+    <h3 class="mono">Hidden profiles ({hidden.length})</h3>
     <ul class="list">
       {hidden.map((h) => (
         <li data-handle={h.handle}>
@@ -46,6 +89,40 @@ const hidden = await hiddenProfiles();
 </Layout>
 
 <script>
+  const admin = (body: object) => fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
+  /** After an invite: say whether it was emailed, and always give the link to copy. */
+  const shown = (el: HTMLElement, r: { email: string; url: string; mailed: boolean }) => {
+    el.hidden = false;
+    el.textContent = `${r.mailed ? `Emailed ${r.email}.` : `Invite for ${r.email}:`} `;
+    const a = Object.assign(document.createElement('a'), { href: r.url, textContent: r.url });
+    const copy = Object.assign(document.createElement('button'), { type: 'button', className: 'btn ghost', textContent: 'Copy link' });
+    copy.addEventListener('click', () => navigator.clipboard.writeText(r.url).then(() => (copy.textContent = 'Copied')));
+    el.append(a, ' ', copy);
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-access]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const li = b.closest<HTMLElement>('li')!;
+      b.disabled = true;
+      const res = await admin({ action: b.dataset.access, id: li.dataset.id });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { b.disabled = false; return alert(data.error ?? 'Failed'); }
+      if (b.dataset.access === 'decline') return li.remove();
+      li.querySelector('.row')!.replaceChildren();
+      shown(li.querySelector<HTMLElement>('.row')!, data);
+    }),
+  );
+
+  const any = document.querySelector<HTMLFormElement>('.invite-any')!;
+  any.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await admin({ action: 'invite', email: new FormData(any).get('email') });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error ?? 'Failed');
+    any.reset();
+    shown(document.querySelector<HTMLElement>('.invite-result')!, data);
+  });
+
   document.querySelectorAll<HTMLButtonElement>('[data-action]').forEach((b) =>
     b.addEventListener('click', async () => {
       const li = b.closest<HTMLElement>('li')!;
@@ -63,6 +140,13 @@ const hidden = await hiddenProfiles();
   .back { text-decoration: none; }
   h1 { font-size: clamp(56px, 9vw, 96px); }
   h2 { color: var(--accent); margin-top: 24px; }
+  h3 { color: var(--muted); margin-top: 8px; }
+  .invite-any { display: flex; gap: 8px; }
+  .invite-any input { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 10px 12px; }
+  .invite-result, .row { flex-wrap: wrap; align-items: center; overflow-wrap: anywhere; }
+  .invite-result a, .row a { color: var(--accent); }
+  details { display: grid; gap: 10px; }
+  summary { cursor: pointer; }
   .list { list-style: none; display: grid; gap: 10px; }
   .list li { border: 1px solid var(--line); padding: 16px; display: grid; gap: 8px; }
   .list a { color: var(--fg); }

@@ -89,3 +89,24 @@ export const report = pgTable(
   },
   (t) => [index('report_status_idx').on(t.status)],
 );
+
+/**
+ * Private beta: people asking for an account while sign-ups are closed. An admin invites them
+ * (status → invited, a token for the link); the invited email may then sign up.
+ */
+export const accessRequest = pgTable(
+  'access_request',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(), // lowercased
+    name: text('name'),
+    link: text('link'), // GitHub / LinkedIn / site, so the admin knows who it is
+    note: text('note'),
+    status: text('status').notNull().default('pending'), // pending | invited | joined | declined
+    token: text('token').unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    invitedAt: timestamp('invited_at', { withTimezone: true }),
+    joinedAt: timestamp('joined_at', { withTimezone: true }),
+  },
+  (t) => [index('access_request_status_idx').on(t.status)],
+);

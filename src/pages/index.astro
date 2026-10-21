@@ -30,7 +30,7 @@ if (SERVER_MODE) {
     <nav class="top mono">
       {signedIn
         ? <><a href={link('explore')}>Explore</a><a href={link('edit')}>Editor</a><a href={link('account')}>Account</a></>
-        : <><a href={link('explore')}>Explore</a><a href={link('login')}>Sign in</a>{signupOpen && <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a>}</>}
+        : <><a href={link('explore')}>Explore</a><a href={link('login')}>Sign in</a>{signupOpen ? <a class="accent" href={`${link('login')}?mode=signup`}>Create account</a> : <a class="accent" href={`${link('login')}?mode=request`}>Request access</a>}</>}
     </nav>
   )}
   <header class="landing">

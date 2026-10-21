@@ -38,7 +38,7 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
    BETTER_AUTH_URL=https://starring.dev
    BETTER_AUTH_SECRET=        # openssl rand -base64 32
    POSTGRES_PASSWORD=         # openssl rand -hex 24  (hex: it goes into a URL)
-   ALLOW_SIGNUP=false         # private beta: only the first account (you) + the allowlist
+   ALLOW_SIGNUP=false         # private beta: you (first account), the allowlist and people you invite from /admin
    SIGNUP_ALLOWLIST=          # friend@example.com,other@example.com
    # optional
    STARRING_IMAGE_TAG=latest  # or sha-1a2b3c4 to pin a build
@@ -129,7 +129,7 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `BETTER_AUTH_URL` | `http://localhost:4321` | Public URL. Used for OAuth callbacks, cookies and origin checks. |
 | `SITE_URL` | same | Canonical URLs, sitemap and Open Graph |
 | `BETTER_AUTH_SECRET` | none | **Required in production.** `openssl rand -base64 32` |
-| `ALLOW_SIGNUP` | `true` | `false` makes the instance invite-only. The **first account on an empty instance is always allowed** (the owner), and so are emails on `SIGNUP_ALLOWLIST`. |
+| `ALLOW_SIGNUP` | `true` | `false` makes the instance invite-only. The **first account on an empty instance is always allowed** (the owner), and so are emails on `SIGNUP_ALLOWLIST` and emails you invite from `/admin`. Visitors see **Request access** instead of *Create account*. See [Private beta](#private-beta-requests-and-invites). |
 | `SIGNUP_ALLOWLIST` | none | Comma-separated emails that may sign up while `ALLOW_SIGNUP=false` |
 | `AUTH_PASSWORD` | `true` | `false` turns off email + password and leaves only OAuth. |
 | `GITHUB_CLIENT_ID` / `_SECRET` | none | Enables "Continue with GitHub". Callback: `<BETTER_AUTH_URL>/api/auth/callback/github` |
@@ -162,6 +162,17 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 - Unpublished profiles return 404 to everyone, including search engines.
 - Users can delete their account from `/account`, which also deletes their profile.
 - **Email:** with `SMTP_HOST` (or `SMTP_URL`) set, there's "Forgot password?" (single-use link, valid 1 hour, signs out every other session) and a confirmation email on sign-up. `REQUIRE_EMAIL_VERIFICATION=true` makes that confirmation mandatory. The reset form answers the same way whether or not an account exists, so it can't be used to probe for addresses.
+
+## Private beta: requests and invites
+
+With `ALLOW_SIGNUP=false`, the landing page and `/login` offer **Request access**. The visitor leaves an email and, optionally, a name, a GitHub, LinkedIn or website link, and a note. Admins (`ADMIN_EMAILS`) get an email about each request when SMTP is configured.
+
+On `/admin`, under **Access requests**:
+- **Invite** sends the person an email with a sign-up link (`/login?mode=signup&invite=…`). The admin page always shows the link too, so you can copy and send it yourself. Without SMTP, that's the only way.
+- **Invite any email** invites someone who never asked.
+- **Decline** removes the request from the list.
+
+An invite allows that **email address** to sign up, with a password or with GitHub or GitLab if the account uses the same email. No redeploy or `SIGNUP_ALLOWLIST` change is needed. Once the person signs up, the request is marked *joined*. It's included in their *Download my data* export and deleted with their account.
 
 ## Terms, privacy and moderation
 

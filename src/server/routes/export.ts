@@ -26,6 +26,10 @@ export const GET: APIRoute = async ({ request }) => {
     .select({ handle: schema.report.handle, reason: schema.report.reason, details: schema.report.details, status: schema.report.status, createdAt: schema.report.createdAt })
     .from(schema.report)
     .where(eq(schema.report.reporterUserId, id));
+  const [accessRequest] = await db
+    .select({ email: schema.accessRequest.email, name: schema.accessRequest.name, link: schema.accessRequest.link, note: schema.accessRequest.note, status: schema.accessRequest.status, createdAt: schema.accessRequest.createdAt, invitedAt: schema.accessRequest.invitedAt, joinedAt: schema.accessRequest.joinedAt })
+    .from(schema.accessRequest)
+    .where(eq(schema.accessRequest.email, session.user.email.toLowerCase()));
 
   const body = {
     exportedAt: new Date().toISOString(),
@@ -34,6 +38,7 @@ export const GET: APIRoute = async ({ request }) => {
     sessions,
     profile: profile ? { handle: profile.handle, published: profile.published, hidden: !!profile.hiddenAt, hiddenReason: profile.hiddenReason, createdAt: profile.createdAt, updatedAt: profile.updatedAt, data: profile.data } : null,
     reportsYouFiled: reports,
+    accessRequest: accessRequest ?? null,
   };
   const day = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(body, null, 2), {

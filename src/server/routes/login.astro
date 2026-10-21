@@ -1,6 +1,7 @@
 ---
 import Layout from '../../components/Layout.astro';
 import { getSession, instance, signupOffered } from '../auth';
+import { invitedEmail } from '../access';
 import { link } from '../../lib/url';
 
 export const prerender = false;
@@ -12,15 +13,41 @@ const next = /^\/(?!\/)/.test(nextParam) ? nextParam : link('edit');
 if (await getSession(Astro.request)) return Astro.redirect(next);
 
 const canOfferSignup = await signupOffered();
-const mode = Astro.url.searchParams.get('mode') === 'signup' && canOfferSignup ? 'signup' : 'signin';
+// An invite link (/login?mode=signup&invite=…) opens sign-up for that email even while sign-ups are closed.
+const invited = await invitedEmail(Astro.url.searchParams.get('invite'));
+const staleInvite = Astro.url.searchParams.has('invite') && !invited;
+const asked = Astro.url.searchParams.get('mode');
+const mode = asked === 'signup' && !staleInvite && (canOfferSignup || invited || instance.signupAllowlist.length > 0) ? 'signup' : asked === 'request' && !canOfferSignup ? 'request' : 'signin';
 const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.gitlab && { id: 'gitlab', label: 'GitLab' }].filter(Boolean) as { id: string; label: string }[];
 ---
-<Layout title={mode === 'signup' ? 'Claim your stage — Starring' : 'Sign in — Starring'} fonts={['acid']} noindex>
+<Layout title={mode === 'signup' ? 'Claim your stage — Starring' : mode === 'request' ? 'Request access — Starring' : 'Sign in — Starring'} fonts={['acid']} noindex>
   <main class="auth" data-next={next} data-mode={mode} data-verify={instance.requireVerification ? '1' : ''} data-verified={`${link('login')}?verified`}>
     <a class="mono accent back" href={link()}>← Starring</a>
     {Astro.url.searchParams.has('reset') && <p class="notice mono">Password changed — sign in with the new one.</p>}
     {Astro.url.searchParams.has('verified') && <p class="notice mono">Email confirmed.</p>}
-    <h1 class="display">{mode === 'signup' ? <>Claim your<br /><span class="accent">stage.</span></> : <>Welcome<br /><span class="accent">back.</span></>}</h1>
+    {staleInvite && <p class="notice mono">This invite was already used or is no longer valid — sign in, or request access again.</p>}
+    <h1 class="display">{
+      mode === 'signup' ? (invited ? <>You’re<br /><span class="accent">invited.</span></> : <>Claim your<br /><span class="accent">stage.</span></>)
+      : mode === 'request' ? <>Request<br /><span class="accent">access.</span></>
+      : <>Welcome<br /><span class="accent">back.</span></>
+    }</h1>
+
+    {mode === 'request' ? (
+      <>
+        <p class="lead">Starring is in private beta. Leave your email and we’ll send you an invite.</p>
+        <form class="request" novalidate>
+          <label class="field"><span class="mono">Email</span><input name="email" type="email" autocomplete="email" required /></label>
+          <label class="field"><span class="mono">Name</span><input name="name" autocomplete="name" /></label>
+          <label class="field"><span class="mono">GitHub, LinkedIn or website</span><input name="link" type="url" placeholder="https://" /></label>
+          <label class="field"><span class="mono">Anything we should know? (optional)</span><textarea name="note" rows="3" maxlength="1000"></textarea></label>
+          <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+          <p class="error" role="alert" hidden></p>
+          <p class="hint">We only use your email to send the invite. See the <a href={link('privacy')}>Privacy notice</a>.</p>
+          <button class="btn" type="submit">Request access →</button>
+        </form>
+        <p class="switch">Already invited or have an account? <a href={`${link('login')}?next=${encodeURIComponent(next)}`}>Sign in</a></p>
+      </>
+    ) : <>
 
     {social.length > 0 && (
       <div class="social">
@@ -34,7 +61,8 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
       <form class="form" novalidate>
         {social.length > 0 && <p class="mono muted or">or with email</p>}
         <label class="field signup-only"><span class="mono">Name</span><input name="name" autocomplete="name" /></label>
-        <label class="field"><span class="mono">Email</span><input name="email" type="email" autocomplete="email" required /></label>
+        <label class="field"><span class="mono">Email</span><input name="email" type="email" autocomplete="email" required value={mode === 'signup' ? invited ?? undefined : undefined} readonly={mode === 'signup' && !!invited} /></label>
+        {mode === 'signup' && invited && <p class="hint">Your invite is for this address. With GitHub or GitLab, use an account with the same email.</p>}
         <label class="field">
           <span class="mono">Password</span>
           <input name="password" type="password" minlength="10" required autocomplete={mode === 'signup' ? 'new-password' : 'current-password'} />
@@ -52,8 +80,9 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
         ? <>Already have a stage? <a href={`${link('login')}?next=${encodeURIComponent(next)}`}>Sign in</a></>
         : canOfferSignup
           ? <>New here? <a href={`${link('login')}?mode=signup&next=${encodeURIComponent(next)}`}>Create an account</a></>
-          : <span class="muted">Sign-ups are closed on this instance.</span>}
+          : <>New here? <a href={`${link('login')}?mode=request&next=${encodeURIComponent(next)}`}>Request access</a> — we’re in private beta.</>}
     </p>
+    </>}
   </main>
 </Layout>
 
@@ -73,6 +102,25 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
       else b.disabled = false;
     }),
   );
+
+  const request = document.querySelector<HTMLFormElement>('.request');
+  request?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(request)) as Record<string, string>;
+    const err = request.querySelector<HTMLElement>('.error')!;
+    const show = (msg: string) => { err.textContent = msg; err.hidden = !msg; };
+    if (!/^\S+@\S+\.\S+$/.test(f.email?.trim() ?? '')) return show('Enter your email address.');
+    if (f.link && !/^https:\/\//.test(f.link.trim())) return show('The link should start with https://');
+    show('');
+    const btn = request.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    btn.disabled = true;
+    const res = await fetch('/api/access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f), credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { btn.disabled = false; return show(data.error || 'Something went wrong — try again in a minute.'); }
+    request.innerHTML = data.status === 'joined'
+      ? `<p class="notice">That email already has an account — <a href="${location.pathname}">sign in</a>.</p>`
+      : `<p class="notice">Thanks! You’re on the list. We’ll email <b>${f.email.trim().replace(/[<>&]/g, '')}</b> when your invite is ready.</p>`;
+  });
 
   const form = document.querySelector<HTMLFormElement>('.form');
   const error = form?.querySelector<HTMLElement>('.error');
@@ -109,13 +157,18 @@ const social = [instance.github && { id: 'github', label: 'GitHub' }, instance.g
   .or { text-align: center; }
   .field { display: grid; gap: 6px; }
   .field .mono { color: var(--muted); }
+  .lead { color: var(--muted); font-size: 18px; }
+  .request { display: grid; gap: 16px; }
+  .hp { position: absolute; left: -9999px; }
+  .field textarea { background: transparent; border: 1px solid var(--line); color: var(--fg); font: inherit; padding: 14px; resize: vertical; }
+  .field textarea:focus { outline: none; border-color: var(--accent); }
   .field input {
     background: transparent; border: 1px solid var(--line); color: var(--fg);
     font: inherit; padding: 14px 14px; border-radius: 0;
   }
   .field input:focus { outline: none; border-color: var(--accent); }
   .hint { font-size: 13px; color: var(--muted); }
-  [data-mode='signin'] .signup-only { display: none; }
+  [data-mode='signin'] .signup-only, [data-mode='request'] .signup-only { display: none; }
   [data-mode='signup'] .signin-only { display: none; }
   .forgot { color: var(--accent); justify-self: end; }
   .hint a { color: var(--accent); }

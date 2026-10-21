@@ -25,6 +25,7 @@ const analytics = !!process.env.PLAUSIBLE_SRC;
       <h2>What we store</h2>
       <ul>
         <li><b>Account:</b> name, email address, a hashed password (if you use one), whether your email is confirmed, and sign-in sessions (with IP address and browser, to keep you signed in and protect the account).</li>
+        <li><b>Access requests</b> (while sign-ups are invite-only): the email, name, link and note you leave, used only to decide on and send your invite. Deleted with your account, or on request.</li>
         <li><b>Sign-in with GitHub or GitLab:</b> your account id there and the access token it issues, used only to import your public profile and contribution counts when you ask.</li>
         <li><b>Your profile:</b> the content you enter or import — name, role, clients, projects, timeline, education, skills, links and commit counts — and whether it is published.</li>
         <li><b>Reports:</b> if you report a profile, the reason and details you give.</li>
