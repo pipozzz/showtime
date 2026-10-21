@@ -87,7 +87,7 @@ export function ProfileSection({ p, up, issues }: SectionProps) {
       </div>
 
       <h4 className="ed-sub">Analytics — your own Plausible</h4>
-      <p className="ed-hint">See who visits your stage in your <a href="https://plausible.io" target="_blank" rel="noreferrer">Plausible</a> (cloud or self-hosted). Add a site there first, then enter its name here. Only a page view is sent — no script from your Plausible runs on this page.</p>
+      <p className="ed-hint">See who visits your stage in your <a href="https://plausible.io" target="_blank" rel="noreferrer">Plausible</a> (cloud or self-hosted). Add a site there first, then enter its name here. Self-hosted? Put its https:// address below (a sub-path like https://example.com/plausible works too). Only a page view is sent — no script from your Plausible runs on this page.</p>
       <div className="ed-grid">
         <Text
           label="Plausible site"

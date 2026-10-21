@@ -77,8 +77,10 @@ test('per-profile Plausible: valid site ids and https origins only', () => {
   const ok = { ...base, analytics: { plausible: { domain: 'starring.dev/jane', host: 'https://plausible.example.com' } } };
   assert.deepEqual(validate(ok), {});
   assert.deepEqual(plausibleTarget(ok), { domain: 'starring.dev/jane', endpoint: 'https://plausible.example.com/api/event' });
+  const sub = { ...base, analytics: { plausible: { domain: 'jane.dev', host: 'https://firma.example/plausible/' } } };
+  assert.deepEqual(plausibleTarget(sub), { domain: 'jane.dev', endpoint: 'https://firma.example/plausible/api/event' }, 'self-hosted under a sub-path');
   assert.deepEqual(plausibleTarget({ ...base, analytics: { plausible: { domain: 'jane.dev' } } }), { domain: 'jane.dev', endpoint: 'https://plausible.io/api/event' });
-  for (const host of ['http://plausible.io', 'javascript:alert(1)', 'https://user:pw@evil.example', 'https://x.example/path']) {
+  for (const host of ['http://plausible.io', 'javascript:alert(1)', 'https://user:pw@evil.example', 'https://x.example/?q=1']) {
     const bad = { ...base, analytics: { plausible: { domain: 'jane.dev', host } } };
     assert.ok(validate(bad)['analytics.plausible.host'], host);
     assert.equal(plausibleTarget(bad), null, host);

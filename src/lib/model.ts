@@ -62,8 +62,9 @@ export const THIS_YEAR = new Date().getFullYear();
 
 /** Plausible site id: a domain, optionally with one path segment (starring.dev/you). */
 export const PLAUSIBLE_DOMAIN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?:\/[a-z0-9._-]+)?$/i;
+/** An https:// Plausible address: an origin, or an origin plus the path it is served under (self-hosted). */
 export const isHttpsOrigin = (v: string) => {
-  try { const u = new URL(v); return u.protocol === 'https:' && !u.username && !u.password && (u.pathname === '/' || u.pathname === ''); } catch { return false; }
+  try { const u = new URL(v); return u.protocol === 'https:' && !u.username && !u.password && !u.search && !u.hash; } catch { return false; }
 };
 /** Where to send a profile's page views, or null when not configured / invalid. */
 export const plausibleTarget = (p: Profile) => {
@@ -71,7 +72,8 @@ export const plausibleTarget = (p: Profile) => {
   if (!pl?.domain || !PLAUSIBLE_DOMAIN.test(pl.domain)) return null;
   const host = pl.host?.trim() || 'https://plausible.io';
   if (!isHttpsOrigin(host)) return null;
-  return { domain: pl.domain.toLowerCase(), endpoint: `${new URL(host).origin}/api/event` };
+  const u = new URL(host);
+  return { domain: pl.domain.toLowerCase(), endpoint: `${u.origin}${u.pathname.replace(/\/+$/, '')}/api/event` };
 };
 
 export const blankProfile = (): Profile => ({
