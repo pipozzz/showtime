@@ -74,7 +74,7 @@ try {
   await step('home, themes, robots and sitemap respond', async () => {
     for (const p of ['/', '/themes', '/explore', '/terms', '/privacy', '/robots.txt', '/sitemap.xml', '/og.png']) assert.equal((await call('GET', p)).status, 200, p);
   });
-  await step('health check, security headers, branded 404', async () => {
+  await step('health check, security headers, gzip, branded 404', async () => {
     const health = await expect(await call('GET', '/api/health'), 200);
     assert.equal(health.db, true);
     const home = await call('GET', '/');
@@ -84,6 +84,10 @@ try {
     const card = await call('GET', '/nova/card/');
     assert.match(card.headers.get('content-security-policy') ?? '', /frame-ancestors \*/, 'embed card stays frameable');
     assert.equal(card.headers.get('x-frame-options'), null);
+    const zipped = await call('GET', '/nova/', undefined, { 'Accept-Encoding': 'gzip' });
+    assert.equal(zipped.headers.get('content-encoding'), 'gzip', 'HTML is gzipped');
+    assert.match(await zipped.text(), /Nova/, 'and decodes');
+    assert.equal((await call('GET', '/og.png', undefined, { 'Accept-Encoding': 'gzip' })).headers.get('content-encoding'), null, 'images are not');
     const missing = await call('GET', '/no-such-stage-xyz');
     assert.equal(missing.status, 404);
     assert.match(await missing.text(), /Empty stage/);

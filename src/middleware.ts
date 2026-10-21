@@ -43,6 +43,25 @@ const movedTo = (request: Request, url: URL) => {
   return new Response(null, { status, headers: { Location: canonical + url.pathname + url.search, 'Cache-Control': 'public, max-age=86400' } });
 };
 
+/**
+ * gzip text responses: the Node adapter sends everything uncompressed and not every proxy
+ * compresses (Nomploy's Traefik doesn't). A profile's HTML goes from ~31 KB to ~7 KB.
+ * Hashed /_astro assets are served by the adapter before this runs; they're small and cached for a year.
+ */
+const COMPRESSIBLE = /^(text\/|application\/(json|xml|javascript|manifest\+json|rss\+xml)|image\/svg\+xml)/;
+const gzip = (request: Request, res: Response) => {
+  const type = res.headers.get('content-type') ?? '';
+  const length = Number(res.headers.get('content-length') ?? Infinity);
+  if (!res.body || request.method === 'HEAD' || res.status < 200 || res.status === 204 || res.status === 206 || res.status >= 300 && res.status < 400) return res;
+  if (res.headers.has('content-encoding') || !COMPRESSIBLE.test(type) || length < 1024) return res;
+  if (!/\bgzip\b/.test(request.headers.get('accept-encoding') ?? '')) return res;
+  const headers = new Headers(res.headers);
+  headers.set('Content-Encoding', 'gzip');
+  headers.append('Vary', 'Accept-Encoding');
+  headers.delete('Content-Length');
+  return new Response(res.body.pipeThrough(new CompressionStream('gzip')), { status: res.status, statusText: res.statusText, headers });
+};
+
 export const onRequest = defineMiddleware(async (ctx, next) => {
   const moved = movedTo(ctx.request, ctx.url);
   if (moved) return moved;
@@ -60,5 +79,5 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
   h.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   const https = ctx.url.protocol === 'https:' || ctx.request.headers.get('x-forwarded-proto') === 'https' || (process.env.BETTER_AUTH_URL ?? '').startsWith('https:');
   if (https) h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  return res;
+  return gzip(ctx.request, res);
 });
