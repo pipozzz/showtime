@@ -41,6 +41,8 @@ const {
   profileName,
 } = Astro.props;
 const themeId = getTheme(theme).id;
+// NOINDEX=true: a demo/mirror that shouldn't compete with the real site in search
+const siteNoindex = () => /^(1|true|yes)$/i.test(process.env.NOINDEX ?? '');
 const site = publicBase(Astro.site, Astro.url);
 const canonical = new URL(Astro.url.pathname.replace(/\/?$/, '/'), site).href;
 const imageUrl = /^https?:/.test(image) ? image : new URL(link(image), site).href;
@@ -62,7 +64,7 @@ const plausibleSrc = (() => {
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {(noindex || siteNoindex()) && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={getTheme(theme).tokens.bg} />
     <link rel="icon" href={link('favicon.svg')} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={link('apple-touch-icon.png')} />

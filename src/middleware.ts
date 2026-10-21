@@ -28,7 +28,24 @@ const csp = (frameable: boolean) =>
     `frame-ancestors ${frameable ? '*' : "'none'"}`,
   ].join('; ');
 
+/**
+ * Old or extra hostnames (REDIRECT_HOSTS=app.starring.dev,www.starring.dev) send visitors to the
+ * public URL with the same path: 301 for page loads, 308 for anything else so form posts keep
+ * their method. Explicit list on purpose — health checks hit the container by IP and must not move.
+ */
+const redirectHosts = new Set((process.env.REDIRECT_HOSTS ?? '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean));
+const canonical = origin(process.env.SITE_URL) || origin(process.env.BETTER_AUTH_URL);
+const movedTo = (request: Request, url: URL) => {
+  if (!SERVER || !canonical || !redirectHosts.size) return null;
+  const host = (request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? url.host).split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
+  if (!redirectHosts.has(host) || host === new URL(canonical).hostname) return null;
+  const status = request.method === 'GET' || request.method === 'HEAD' ? 301 : 308;
+  return new Response(null, { status, headers: { Location: canonical + url.pathname + url.search, 'Cache-Control': 'public, max-age=86400' } });
+};
+
 export const onRequest = defineMiddleware(async (ctx, next) => {
+  const moved = movedTo(ctx.request, ctx.url);
+  if (moved) return moved;
   const res = await next();
   if (!SERVER) return res;
   // embeddable card: /<handle>/card — meant to be framed by other sites

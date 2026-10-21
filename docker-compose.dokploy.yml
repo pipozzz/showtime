@@ -3,7 +3,7 @@
 # In Dokploy: Create Service → Compose → Provider: GitHub → repo pipozzz/starring,
 # branch main, Compose Path: ./docker-compose.dokploy.yml. Then:
 #   Environment tab → paste the variables below (see docs/self-hosting.md#dokploy)
-#   Domains tab     → Service: app, Port: 4321, HTTPS on, e.g. app.starring.dev
+#   Domains tab     → Service: app, Port: 4321, HTTPS on, e.g. starring.dev
 # No ports are published: Dokploy attaches its Traefik network and routes the domain.
 # Postgres stays on the internal network only.
 #
@@ -31,6 +31,7 @@ services:
       DATABASE_URL: postgres://starring:${POSTGRES_PASSWORD}@db:5432/starring
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       SITE_URL: ${SITE_URL:-}
+      REDIRECT_HOSTS: ${REDIRECT_HOSTS:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
       SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}

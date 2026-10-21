@@ -35,6 +35,8 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
           # optional analytics: set the repo variable PLAUSIBLE_SRC (Settings → Secrets and variables → Actions → Variables)
           PLAUSIBLE_SRC: ${{ vars.PLAUSIBLE_SRC }}
+          # set the repo variable NOINDEX=true when this Pages site is only a demo of a real instance
+          NOINDEX: ${{ vars.NOINDEX }}
           # shown on /terms and /privacy — set as repo variables
           OPERATOR_NAME: ${{ vars.OPERATOR_NAME }}
           OPERATOR_EMAIL: ${{ vars.OPERATOR_EMAIL }}

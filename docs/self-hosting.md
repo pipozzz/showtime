@@ -35,7 +35,7 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
 1. **Create Service → Compose.** Set Provider to **GitHub**, the repository to `pipozzz/starring` (or your fork), the branch to `main`, and **Compose Path** to `./docker-compose.dokploy.yml`.
 2. **Environment** tab:
    ```env
-   BETTER_AUTH_URL=https://app.starring.dev
+   BETTER_AUTH_URL=https://starring.dev
    BETTER_AUTH_SECRET=        # openssl rand -base64 32
    POSTGRES_PASSWORD=         # openssl rand -hex 24  (hex: it goes into a URL)
    ALLOW_SIGNUP=false         # private beta: only the first account (you) + the allowlist
@@ -144,10 +144,12 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `OPERATOR_NAME` / `OPERATOR_EMAIL` / `OPERATOR_ADDRESS` / `OPERATOR_COUNTRY` | none | Shown on `/terms` and `/privacy`. As the operator you are the data controller for your instance. |
 | `ADMIN_EMAILS` | none | Comma-separated. These accounts can open `/admin`, hide reported profiles, receive report emails and claim blocked handles. |
 | `BLOCKED_HANDLES` | none | Extra handles nobody may claim, added to the built-in list of brands and "official"-looking words |
+| `REDIRECT_HOSTS` | none | Other hostnames that should send visitors to the public URL, comma-separated (e.g. `app.example.com,www.example.com`). Page loads get a 301 and the path is kept. Add those domains to the same service so the requests reach the app. |
+| `NOINDEX` | `false` | `true` adds `noindex` to every page and makes `robots.txt` block everything. Use it for a demo or mirror (e.g. a GitHub Pages copy) of a site that lives elsewhere. |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
 | `PLAUSIBLE_API_KEY` | none | A Plausible **Stats API** key (Plausible → Settings → API keys). When set, every owner sees the last 30 days of visitors to *their* page on `/account`: totals, a daily chart, top sources and countries. The key never leaves the server; numbers are cached for 5 minutes. |
 | `PLAUSIBLE_API_HOST` | the `PLAUSIBLE_SRC` host | Where the Stats API lives, if it differs from the script host. |
-| `PLAUSIBLE_SITE_ID` | hostname of `SITE_URL` / `BETTER_AUTH_URL` | The site name in Plausible (e.g. `app.starring.dev`). |
+| `PLAUSIBLE_SITE_ID` | hostname of `SITE_URL` / `BETTER_AUTH_URL` | The site name in Plausible (e.g. `starring.dev`). |
 
 ## Security notes
 
