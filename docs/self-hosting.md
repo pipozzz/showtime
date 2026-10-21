@@ -42,7 +42,8 @@ Use `docker-compose.dokploy.yml`. It pulls the prebuilt image `ghcr.io/pipozzz/s
    SIGNUP_ALLOWLIST=          # friend@example.com,other@example.com
    # optional
    STARRING_IMAGE_TAG=latest  # or sha-1a2b3c4 to pin a build
-   PLAUSIBLE_SRC=
+   PLAUSIBLE_SRC=             # https://plausible.example.com/js/pa-….js
+   PLAUSIBLE_API_KEY=         # Stats API key → owners see their visitors on /account
    SMTP_HOST=                 # mail.example.com — for password reset emails
    SMTP_PORT=587
    SMTP_USER=
@@ -144,6 +145,9 @@ DATABASE_URL=postgres://… BETTER_AUTH_URL=https://… BETTER_AUTH_SECRET=… n
 | `ADMIN_EMAILS` | none | Comma-separated. These accounts can open `/admin`, hide reported profiles, receive report emails and claim blocked handles. |
 | `BLOCKED_HANDLES` | none | Extra handles nobody may claim, added to the built-in list of brands and "official"-looking words |
 | `PLAUSIBLE_SRC` | none | Optional [Plausible](https://plausible.io) script URL (`https://…/js/….js`). It's cookieless, and nothing loads when this is unset. For static sites on GitHub Pages, set it as a repository **variable** with the same name instead. |
+| `PLAUSIBLE_API_KEY` | none | A Plausible **Stats API** key (Plausible → Settings → API keys). When set, every owner sees the last 30 days of visitors to *their* page on `/account`: totals, a daily chart, top sources and countries. The key never leaves the server; numbers are cached for 5 minutes. |
+| `PLAUSIBLE_API_HOST` | the `PLAUSIBLE_SRC` host | Where the Stats API lives, if it differs from the script host. |
+| `PLAUSIBLE_SITE_ID` | hostname of `SITE_URL` / `BETTER_AUTH_URL` | The site name in Plausible (e.g. `app.starring.dev`). |
 
 ## Security notes
 

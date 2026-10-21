@@ -4,7 +4,8 @@ import { getSession, instance } from '../auth';
 import { getByUser } from '../profiles';
 import { and, desc, eq, gt } from 'drizzle-orm';
 import { db, schema } from '../db';
-import { link } from '../../lib/url';
+import { link, pageLink } from '../../lib/url';
+import { ownerStats, statsConfig, type OwnerStats } from '../stats';
 
 export const prerender = false;
 
@@ -17,6 +18,12 @@ const devices = await db
   .from(schema.session)
   .where(and(eq(schema.session.userId, session.user.id), gt(schema.session.expiresAt, new Date())))
   .orderBy(desc(schema.session.createdAt));
+// Visitors to your page, from the instance's Plausible — only when the operator set PLAUSIBLE_API_KEY.
+let stats: OwnerStats | null | 'error' = null;
+if (own?.published && statsConfig()) {
+  stats = await ownerStats(pageLink(own.handle)).catch((e) => (console.error('[stats]', e.message), 'error' as const));
+}
+const peak = stats && stats !== 'error' ? Math.max(1, ...stats.daily.map((d) => d.visitors)) : 1;
 /** "Chrome on macOS" from a user agent — good enough to recognise your own devices. */
 const device = (ua?: string | null) => {
   if (!ua) return 'Unknown device';
@@ -60,6 +67,41 @@ const device = (ua?: string | null) => {
         </>
       )}
     </section>
+
+    {stats && (
+      <section class="card">
+        <p class="mono muted">Visitors · last {stats === 'error' ? 30 : stats.days} days</p>
+        {stats === 'error' ? (
+          <p class="muted">Stats aren’t available right now. Try again in a few minutes.</p>
+        ) : (
+          <>
+            <div class="nums">
+              <p><b class="display">{stats.visitors.toLocaleString('en')}</b> <span class="mono muted">visitors</span></p>
+              <p><b class="display">{stats.pageviews.toLocaleString('en')}</b> <span class="mono muted">page views</span></p>
+            </div>
+            <svg class="spark" viewBox={`0 0 ${stats.daily.length * 10} 60`} preserveAspectRatio="none" role="img" aria-label={`Daily visitors, ${stats.daily[0].date} to ${stats.daily.at(-1)!.date}`}>
+              {stats.daily.map((d, i) => (
+                <rect x={i * 10 + 1} width="8" y={60 - Math.max(d.visitors ? 3 : 1, (d.visitors / peak) * 60)} height={Math.max(d.visitors ? 3 : 1, (d.visitors / peak) * 60)} class={d.visitors ? '' : 'zero'}>
+                  <title>{d.date}: {d.visitors}</title>
+                </rect>
+              ))}
+            </svg>
+            {stats.visitors > 0 ? (
+              <div class="tops">
+                {[['Where they came from', stats.sources], ['Countries', stats.countries]].map(([label, rows]) => (
+                  <div>
+                    <p class="mono muted">{label as string}</p>
+                    <ul>{(rows as OwnerStats['sources']).map((r) => <li><span>{r.name}</span><span class="mono">{r.visitors}</span></li>)}</ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p class="muted">No visitors yet — share your page on LinkedIn or put it in your GitHub profile README.</p>
+            )}
+          </>
+        )}
+      </section>
+    )}
 
     {hasPassword && (
       <section class="card">
@@ -175,4 +217,12 @@ const device = (ua?: string | null) => {
   .devices { list-style: none; display: grid; gap: 8px; }
   .devices li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .devices .tag { margin-left: 8px; }
+  .nums { display: flex; gap: 32px; flex-wrap: wrap; }
+  .nums b { font-size: 44px; font-weight: 400; color: var(--accent); margin-right: 6px; }
+  .spark { width: 100%; height: 60px; display: block; }
+  .spark rect { fill: var(--accent); }
+  .spark rect.zero { fill: var(--line); }
+  .tops { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+  .tops ul { list-style: none; display: grid; gap: 4px; margin-top: 6px; }
+  .tops li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 </style>
