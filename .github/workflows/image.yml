@@ -6,6 +6,10 @@ name: Docker image
 #   ghcr.io/pipozzz/starring:<version>   — tags like v1.2.3
 # Optional: set the repo secret DOKPLOY_DEPLOY_WEBHOOK to the compose service's
 # deploy webhook URL, and Dokploy redeploys as soon as the new image is pushed.
+#
+# Each architecture builds natively on its own runner (arm64 on GitHub's free ARM runners):
+# emulating arm64 with QEMU took 15–30 min whenever the layer cache was cold. The two
+# images are pushed by digest and joined into one multi-arch tag at the end.
 
 on:
   push:
@@ -21,12 +25,72 @@ concurrency:
   group: image-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
 jobs:
-  image:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-qemu-action@v4
+      - name: Platform slug
+        run: echo "PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.title=Starring
+            org.opencontainers.image.description=Your developer career as a scroll story — server mode with accounts and Postgres.
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: STARRING_VERSION=${{ github.sha }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ env.PAIR }}
+          cache-to: type=gha,mode=max,scope=${{ env.PAIR }}
+      - name: Export digest
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ env.PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -36,24 +100,19 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
             type=semver,pattern={{version}}
-          labels: |
-            org.opencontainers.image.title=Starring
-            org.opencontainers.image.description=Your developer career as a scroll story — server mode with accounts and Postgres.
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: STARRING_VERSION=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Join the platforms into one multi-arch tag
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          # shellcheck disable=SC2046 # one -t per tag and one ref per digest: splitting is the point
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf "$IMAGE@sha256:%s " *)
+          docker buildx imagetools inspect "$IMAGE:${{ steps.meta.outputs.version }}"
       - name: Trigger Dokploy redeploy
         if: github.ref == 'refs/heads/main'
         env:
