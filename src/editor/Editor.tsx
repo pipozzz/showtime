@@ -13,6 +13,7 @@ import Onboarding from './Onboarding';
 import { useServer, type SyncStatus } from './useServer';
 import { getTheme, hasTheme } from '../themes';
 import {
+  AccoladesSection, InterestsSection, TalksSection, TestimonialsSection,
   ClientsSection, EducationSection, ExperienceSection, NumbersSection, PlatformsSection,
   ProfileSection, ProjectsSection, SkillsSection, type SectionProps,
 } from './sections';
@@ -22,13 +23,17 @@ const DRAFT_KEY = 'starring:draft:v1';
 
 const SECTIONS: { id: string; label: string; short: string; act: string; C: (p: SectionProps) => ReactElement; prefix: string[] }[] = [
   { id: 'profile', label: 'Headliner', short: 'Hero', act: 'Hero', C: ProfileSection, prefix: ['handle', 'profile.', 'analytics.'] },
-  { id: 'contributions', label: 'Numbers', short: 'Nums', act: 'I · V', C: NumbersSection, prefix: ['contributions.'] },
+  { id: 'contributions', label: 'Numbers', short: 'Nums', act: 'I · VII', C: NumbersSection, prefix: ['contributions.'] },
   { id: 'clients', label: 'Clients', short: 'Clnt', act: 'II', C: ClientsSection, prefix: ['clients.'] },
   { id: 'experience', label: 'Timeline', short: 'Time', act: 'III', C: ExperienceSection, prefix: ['experience.'] },
   { id: 'projects', label: 'Featured work', short: 'Work', act: 'IV', C: ProjectsSection, prefix: ['projects.'] },
-  { id: 'platforms', label: 'Platforms', short: 'Git', act: 'V', C: PlatformsSection, prefix: ['platforms.'] },
-  { id: 'education', label: 'Education', short: 'Edu', act: 'VI', C: EducationSection, prefix: ['education.'] },
-  { id: 'skills', label: 'Skills', short: 'Skill', act: 'VI', C: SkillsSection, prefix: ['skills'] },
+  { id: 'awards', label: 'Accolades', short: 'Award', act: 'V', C: AccoladesSection, prefix: ['awards.', 'certifications.'] },
+  { id: 'talks', label: 'Press tour', short: 'Talk', act: 'VI', C: TalksSection, prefix: ['talks.'] },
+  { id: 'platforms', label: 'Platforms', short: 'Git', act: 'VII', C: PlatformsSection, prefix: ['platforms.'] },
+  { id: 'education', label: 'Education', short: 'Edu', act: 'VIII', C: EducationSection, prefix: ['education.'] },
+  { id: 'skills', label: 'Skills & languages', short: 'Skill', act: 'VIII', C: SkillsSection, prefix: ['skills', 'languages.'] },
+  { id: 'interests', label: 'Behind the scenes', short: 'Life', act: 'IX', C: InterestsSection, prefix: ['interests.'] },
+  { id: 'testimonials', label: 'The critics', short: 'Quote', act: 'X', C: TestimonialsSection, prefix: ['testimonials.'] },
 ];
 
 const DEVICES = { desktop: 1280, tablet: 820, phone: 390 } as const;
@@ -198,7 +203,11 @@ export default function Editor({ samples }: Props) {
     frame.current?.querySelectorAll(`[data-section="${active}"]`).forEach((el) => el.classList.add('is-active'));
   });
 
+  // story sections that live inside another editor section
+  const ALIAS: Record<string, string> = { certifications: 'awards', languages: 'skills' };
   const pick = (id: string) => {
+    id = ALIAS[id] ?? id;
+    if (!SECTIONS.some((s) => s.id === id)) return;
     setActive(id);
     setMobileTab('edit');
     formScroll.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -521,7 +530,7 @@ export default function Editor({ samples }: Props) {
         <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Import profile" onClick={(e) => e.target === e.currentTarget && setImportOpen(false)}>
           <form className="ed-modal-box" onSubmit={(e) => { e.preventDefault(); load(new FormData(e.currentTarget).get('yaml') as string, 'Imported'); }}>
             <h3 className="display">Import profile</h3>
-            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, or choose or drop your <b>LinkedIn data export</b> ZIP (Settings → Data privacy → Get a copy of your data). Only profile, positions, education, skills and projects are read; messages and connections are never opened. Conversion stays in this browser.</p>
+            <p className="muted">Paste a Starring profile, a JSON Resume or a <code>starring-activity.json</code> from <code>npx starring-cli scan</code>, or choose or drop your <b>LinkedIn data export</b> ZIP (Settings → Data privacy → Get a copy of your data). Only your profile, positions, education, skills, projects, certifications, honors, languages, publications and the recommendations you received are read; messages and connections are never opened. Conversion stays in this browser.</p>
             <div className="ed-seg" role="radiogroup" aria-label="JSON Resume import mode">
               <label className={importMode === 'fresh' ? 'on' : ''}>
                 <input type="radio" name="resume-mode" checked={importMode === 'fresh'} onChange={() => setImportMode('fresh')} />Start fresh

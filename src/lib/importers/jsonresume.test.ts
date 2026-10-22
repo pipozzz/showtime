@@ -108,3 +108,23 @@ test('unusual imported group names remain own data properties', () => {
   assert.equal(profile.profile.links?.['__proto__'], 'https://example.com');
   assert.equal(Object.getPrototypeOf(profile.skills), Object.prototype);
 });
+
+test('awards, certificates, publications, languages, interests and references', () => {
+  const { profile, notes } = importJsonResume({
+    basics: { name: 'Ada', label: 'Engineer' },
+    awards: [{ title: 'Hackathon winner', date: '2021-05-01', awarder: 'Devfest', summary: 'Accessible ticketing' }],
+    certificates: [{ name: 'AWS SAA', date: '2023-01-10', issuer: 'AWS', url: 'https://aws.amazon.com/verify/x' }],
+    publications: [{ name: 'Calm releases', publisher: 'Blog', releaseDate: '2022-03', url: 'https://ada.dev/calm' }],
+    languages: [{ language: 'Slovak', fluency: 'Native speaker' }],
+    interests: [{ name: 'Climbing', keywords: ['bouldering', 'alpine'] }],
+    references: [{ name: 'Grace', reference: 'Ada is the calmest engineer I know.' }],
+    volunteer: [{ organization: 'Code Club' }],
+  });
+  assert.deepEqual(profile.awards, [{ title: 'Hackathon winner', by: 'Devfest', year: 2021, note: 'Accessible ticketing' }]);
+  assert.deepEqual(profile.certifications, [{ name: 'AWS SAA', issuer: 'AWS', year: 2023, url: 'https://aws.amazon.com/verify/x' }]);
+  assert.deepEqual(profile.talks, [{ title: 'Calm releases', kind: 'article', venue: 'Blog', year: 2022, url: 'https://ada.dev/calm' }]);
+  assert.deepEqual(profile.languages, [{ name: 'Slovak', level: 'Native speaker' }]);
+  assert.deepEqual(profile.interests, [{ name: 'Climbing', note: 'bouldering, alpine' }]);
+  assert.deepEqual(profile.testimonials, [{ name: 'Grace', quote: 'Ada is the calmest engineer I know.' }]);
+  assert.ok(notes.some((n) => /Not imported.*volunteer/.test(n)) && !notes.some((n) => /awards/.test(n)));
+});

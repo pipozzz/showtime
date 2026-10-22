@@ -2,9 +2,12 @@
 // Runs in the browser. From the ZIP only the profile files below are ever decompressed —
 // messages, connections, invitations and everything else are skipped unread.
 import { unzipSync } from 'fflate';
-import { THIS_YEAR, blankProfile, type Education, type Experience, type Profile, type Project } from '../model';
+import { THIS_YEAR, blankProfile, type Award, type Certification, type Education, type Experience, type Language, type Profile, type Project, type Talk, type Testimonial } from '../model';
 
-export const LINKEDIN_FILES = ['Profile.csv', 'Positions.csv', 'Education.csv', 'Skills.csv', 'Projects.csv', 'Certifications.csv'] as const;
+export const LINKEDIN_FILES = [
+  'Profile.csv', 'Positions.csv', 'Education.csv', 'Skills.csv', 'Projects.csv', 'Certifications.csv',
+  'Honors.csv', 'Languages.csv', 'Publications.csv', 'Recommendations_Received.csv',
+] as const;
 type FileName = (typeof LINKEDIN_FILES)[number];
 export type LinkedInFiles = Partial<Record<FileName, string>>;
 
@@ -128,7 +131,32 @@ export function importLinkedIn(files: LinkedInFiles, opts: { base?: Profile } = 
     .filter((p) => p.title);
 
   const skillNames = table(files['Skills.csv'], 'name').map((r) => r.name).filter(Boolean);
-  const certs = table(files['Certifications.csv'], 'name').map((r) => r.name).filter(Boolean);
+  const link = (v: string | undefined) => websites(v)[0];
+
+  const certifications: Certification[] = table(files['Certifications.csv'], 'name')
+    .map((r) => ({ name: r.name, ...(r.authority && { issuer: r.authority }), ...(year(r['started on']) && { year: year(r['started on']) }), ...(link(r.url) && { url: link(r.url) }) }))
+    .filter((c) => c.name);
+
+  const awards: Award[] = table(files['Honors.csv'], 'title')
+    .map((r) => ({ title: r.title, ...(year(r['issued on']) && { year: year(r['issued on']) }), ...(r.description && { note: clip(r.description, 140) }) }))
+    .filter((a) => a.title);
+
+  const talks: Talk[] = table(files['Publications.csv'], 'name')
+    .map((r) => ({ title: r.name, kind: 'article' as const, ...(r.publisher && { venue: r.publisher }), ...(year(r['published on']) && { year: year(r['published on']) }), ...(link(r.url) && { url: link(r.url) }) }))
+    .filter((t) => t.title);
+
+  // LinkedIn levels: "Native or bilingual proficiency", "Full professional proficiency", …
+  const LEVEL: [RegExp, string][] = [[/native|bilingual/i, 'Native'], [/full professional/i, 'Fluent'], [/professional working/i, 'Professional'], [/limited working/i, 'Conversational'], [/elementary/i, 'Basic']];
+  const languages: Language[] = table(files['Languages.csv'], 'name')
+    .map((r) => ({ name: r.name, ...(r.proficiency && { level: LEVEL.find(([re]) => re.test(r.proficiency))?.[1] ?? r.proficiency }) }))
+    .filter((l) => l.name);
+
+  // only recommendations that are visible on the LinkedIn profile already
+  const testimonials: Testimonial[] = table(files['Recommendations_Received.csv'], 'text')
+    .filter((r) => !r.status || /visible/i.test(r.status))
+    .map((r) => ({ quote: clip(r.text, 380), name: [r['first name'], r['last name']].filter(Boolean).join(' '), ...(r['job title'] && { role: r['job title'] }), ...(r.company && { company: r.company }) }))
+    .filter((t) => t.quote && t.name)
+    .slice(0, 6);
 
   const key = (...v: (string | number | null | undefined)[]) => v.map((x) => String(x ?? '').toLowerCase()).join('|');
   const append = <T,>(a: T[], b: T[], k: (x: T) => string) => {
@@ -141,7 +169,6 @@ export function importLinkedIn(files: LinkedInFiles, opts: { base?: Profile } = 
     const group = Object.keys(skills).find((g) => g.toLowerCase() === 'skills') ?? 'Skills';
     skills[group] = [...new Set([...(skills[group] ?? []), ...skillNames])].slice(0, 24);
   }
-  if (certs.length) skills.Certifications = [...new Set([...(skills.Certifications ?? []), ...certs])].slice(0, 12);
 
   const profile: Profile = {
     ...base,
@@ -157,10 +184,21 @@ export function importLinkedIn(files: LinkedInFiles, opts: { base?: Profile } = 
     education: append(fresh ? [] : base.education ?? [], education, (e) => key(e.school, e.from)),
     projects: append(base.projects ?? [], projects, (p) => key(p.title)),
     skills,
+    certifications: append(fresh ? [] : base.certifications ?? [], certifications, (c) => key(c.name)),
+    awards: append(fresh ? [] : base.awards ?? [], awards, (a) => key(a.title)),
+    talks: append(fresh ? [] : base.talks ?? [], talks, (t) => key(t.title)),
+    languages: append(fresh ? [] : base.languages ?? [], languages, (l) => key(l.name)),
+    testimonials: append(fresh ? [] : base.testimonials ?? [], testimonials, (t) => key(t.name, t.quote.slice(0, 40))),
   };
 
   const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
-  notes.push(`From LinkedIn: ${[n(experience.length, 'role'), n(education.length, 'school'), n(skillNames.length, 'skill'), projects.length && n(projects.length, 'project')].filter(Boolean).join(', ')}.`);
+  notes.push(`From LinkedIn: ${[
+    n(experience.length, 'role'), n(education.length, 'school'), n(skillNames.length, 'skill'),
+    projects.length && n(projects.length, 'project'), certifications.length && n(certifications.length, 'certification'),
+    awards.length && n(awards.length, 'award'), talks.length && n(talks.length, 'publication'),
+    languages.length && n(languages.length, 'language'), testimonials.length && n(testimonials.length, 'recommendation'),
+  ].filter(Boolean).join(', ')}.`);
+  if (testimonials.length) notes.push('Recommendations became testimonials — they were public on LinkedIn, but check the people are happy to be quoted here too.');
   if (experience.length) notes.push('LinkedIn has no clients or stack per role — add them in the Timeline, and mark NDA work under Clients.');
   if (!files['Positions.csv']) notes.push('Positions.csv was not in the export — request "Positions" too for your career timeline.');
   return { profile, notes };

@@ -289,7 +289,9 @@ export function ProjectsSection({ p, up, issues, notify }: SectionProps) {
             ]}
           />
           <Text label="Your role" value={x.role} onChange={(role) => set({ role })} />
-          {x.visibility !== 'nda' && <Text label="URL" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://" error={issues[`projects.${i}.url`]} />}
+          {x.visibility !== 'nda' && <Text label="Source code" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://github.com/…" error={issues[`projects.${i}.url`]} />}
+          <Text label="Live" value={x.live} onChange={(live) => set({ live: live || undefined })} placeholder="https://" hint="The site, app or demo people can try — fine for NDA work that's public" error={issues[`projects.${i}.live`]} />
+          <Text label="Image" value={x.image} onChange={(image) => set({ image: image || undefined })} placeholder="https://…/screenshot.png" hint="A screenshot or poster (https). Only what you're allowed to show." error={issues[`projects.${i}.image`]} wide />
           <Area label="Blurb" value={x.blurb} onChange={(blurb) => set({ blurb })} max={180} error={issues[`projects.${i}.blurb`]} wide />
           <Chips label="Impact" value={x.impact} onChange={(impact) => set({ impact })} placeholder="18M visits, +23% conversion…" hint="Short and numeric hits hardest" wide />
           <Chips label="Stack" value={x.stack} onChange={(stack) => set({ stack })} wide />
@@ -323,11 +325,12 @@ export function EducationSection({ p, up, issues, notify }: SectionProps) {
   );
 }
 
-export function SkillsSection({ p, up, notify }: SectionProps) {
+export function SkillsSection({ p, up, issues, notify }: SectionProps) {
   const groups = Object.entries(p.skills ?? {}).map(([name, items]) => ({ name, items }));
   const save = (gs: { name: string; items: string[] }[]) =>
     up({ skills: Object.fromEntries(gs.map((g, i) => [g.name || `Group ${i + 1}`, g.items])) });
   return (
+    <>
     <ListEditor
       items={groups}
       onChange={save}
@@ -344,5 +347,158 @@ export function SkillsSection({ p, up, notify }: SectionProps) {
         </div>
       )}
     />
+    <h3 className="ed-sub">Languages</h3>
+    <ListEditor
+      items={p.languages ?? []}
+      onChange={(languages) => up({ languages })}
+      make={() => ({ name: '', level: '' })}
+      title={(x) => x.name}
+      meta={(x) => x.level ?? ''}
+      addLabel="Add language"
+      empty="The languages you work in — a big deal for international teams."
+      invalid={(i) => has(issues, `languages.${i}.`)}
+      onRemove={(x) => notify(`Removed ${x.name || 'language'}`, true)}
+      render={(x, set, i) => (
+        <div className="ed-grid">
+          <Text label="Language" value={x.name} onChange={(name) => set({ name })} error={issues[`languages.${i}.name`]} />
+          <Combo label="Level" value={x.level} options={['Native', 'Fluent', 'Professional', 'Conversational', 'Basic', 'C2', 'C1', 'B2', 'B1']} onChange={(level) => set({ level: level || undefined })} />
+        </div>
+      )}
+    />
+    </>
+  );
+}
+
+export function AccoladesSection({ p, up, issues, notify }: SectionProps) {
+  return (
+    <>
+      <p className="ed-lead">Awards, hackathon wins, "employee of the year", a feature in a magazine — and the certifications that back up your stack.</p>
+      <h3 className="ed-sub">Awards & recognition</h3>
+      <ListEditor
+        items={p.awards ?? []}
+        onChange={(awards) => up({ awards })}
+        make={() => ({ title: '', by: '', year: THIS_YEAR })}
+        title={(x) => x.title}
+        meta={(x) => (x.year ? String(x.year) : '')}
+        addLabel="Add award"
+        empty="Nothing yet? Hackathons, internal awards and press features count."
+        invalid={(i) => has(issues, `awards.${i}.`)}
+        onRemove={(x) => notify(`Removed ${x.title || 'award'}`, true)}
+        render={(x, set, i) => (
+          <div className="ed-grid">
+            <Text label="Award" value={x.title} onChange={(title) => set({ title })} placeholder="Best Developer Tool 2024" error={issues[`awards.${i}.title`]} wide />
+            <Text label="Given by" value={x.by} onChange={(by) => set({ by: by || undefined })} placeholder="Product Hunt, your company, a conference…" />
+            <Num label="Year" value={x.year} min={1950} max={THIS_YEAR + 1} onChange={(year) => set({ year })} error={issues[`awards.${i}.year`]} />
+            <Text label="Link" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://" error={issues[`awards.${i}.url`]} />
+            <Text label="One line about it" value={x.note} onChange={(note) => set({ note: note || undefined })} wide />
+          </div>
+        )}
+      />
+      <h3 className="ed-sub">Certifications</h3>
+      <ListEditor
+        items={p.certifications ?? []}
+        onChange={(certifications) => up({ certifications })}
+        make={() => ({ name: '', issuer: '', year: THIS_YEAR })}
+        title={(x) => x.name}
+        meta={(x) => x.issuer ?? ''}
+        addLabel="Add certification"
+        empty="AWS, Kubernetes, Terraform, Scrum — with a verify link if there is one."
+        invalid={(i) => has(issues, `certifications.${i}.`)}
+        onRemove={(x) => notify(`Removed ${x.name || 'certification'}`, true)}
+        render={(x, set, i) => (
+          <div className="ed-grid">
+            <Text label="Certification" value={x.name} onChange={(name) => set({ name })} placeholder="AWS Certified Solutions Architect – Professional" error={issues[`certifications.${i}.name`]} wide />
+            <Text label="Issuer" value={x.issuer} onChange={(issuer) => set({ issuer: issuer || undefined })} placeholder="Amazon Web Services" />
+            <Num label="Year" value={x.year} min={1950} max={THIS_YEAR + 1} onChange={(year) => set({ year })} error={issues[`certifications.${i}.year`]} />
+            <Text label="Verify link" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://www.credly.com/badges/…" error={issues[`certifications.${i}.url`]} wide />
+          </div>
+        )}
+      />
+    </>
+  );
+}
+
+const TALK_KINDS = [
+  { id: 'talk', label: 'Talk' },
+  { id: 'article', label: 'Article' },
+  { id: 'podcast', label: 'Podcast' },
+  { id: 'video', label: 'Video' },
+  { id: 'book', label: 'Book' },
+] as const;
+
+export function TalksSection({ p, up, issues, notify }: SectionProps) {
+  return (
+    <ListEditor
+      items={p.talks ?? []}
+      onChange={(talks) => up({ talks })}
+      make={() => ({ title: '', kind: 'talk' as const, venue: '', year: THIS_YEAR })}
+      title={(x) => x.title}
+      meta={(x) => <span className="ed-pill">{x.kind ?? 'talk'}</span>}
+      addLabel="Add talk or article"
+      empty="Conference talks, meetups, blog posts, podcasts you were on, videos, a book."
+      invalid={(i) => has(issues, `talks.${i}.`)}
+      onRemove={(x) => notify(`Removed ${x.title || 'item'}`, true)}
+      render={(x, set, i) => (
+        <div className="ed-grid">
+          <Text label="Title" value={x.title} onChange={(title) => set({ title })} error={issues[`talks.${i}.title`]} wide />
+          <Segmented label="Kind" value={x.kind ?? 'talk'} onChange={(kind) => set({ kind })} options={TALK_KINDS.map((k) => ({ ...k }))} />
+          <Text label="Where" value={x.venue} onChange={(venue) => set({ venue: venue || undefined })} placeholder="KubeCon EU, Smashing Magazine, Syntax.fm…" />
+          <Num label="Year" value={x.year} min={1950} max={THIS_YEAR + 1} onChange={(year) => set({ year })} error={issues[`talks.${i}.year`]} />
+          <Text label="Link" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://" error={issues[`talks.${i}.url`]} wide />
+        </div>
+      )}
+    />
+  );
+}
+
+export function InterestsSection({ p, up, issues, notify }: SectionProps) {
+  return (
+    <>
+      <p className="ed-lead">The person behind the commits. People hire people — a hobby is often what they remember and ask about.</p>
+      <ListEditor
+        items={p.interests ?? []}
+        onChange={(interests) => up({ interests })}
+        make={() => ({ name: '', note: '' })}
+        title={(x) => x.name}
+        addLabel="Add interest"
+        empty="Climbing, sourdough, synths, chess, a podcast you run…"
+        invalid={(i) => has(issues, `interests.${i}.`)}
+        onRemove={(x) => notify(`Removed ${x.name || 'interest'}`, true)}
+        render={(x, set, i) => (
+          <div className="ed-grid">
+            <Text label="Interest" value={x.name} onChange={(name) => set({ name })} placeholder="Trail running" error={issues[`interests.${i}.name`]} />
+            <Text label="One line (optional)" value={x.note} onChange={(note) => set({ note: note || undefined })} placeholder="Two ultramarathons, one more to go" />
+          </div>
+        )}
+      />
+    </>
+  );
+}
+
+export function TestimonialsSection({ p, up, issues, notify }: SectionProps) {
+  return (
+    <>
+      <p className="ed-lead">What colleagues and clients say about working with you. Use real quotes, with permission — a LinkedIn recommendation is a good source.</p>
+      <ListEditor
+        items={p.testimonials ?? []}
+        onChange={(testimonials) => up({ testimonials })}
+        make={() => ({ quote: '', name: '', role: '', company: '' })}
+        title={(x) => x.name || x.quote.slice(0, 40)}
+        meta={(x) => x.company ?? ''}
+        addLabel="Add testimonial"
+        empty="One or two short quotes beat a page of praise."
+        invalid={(i) => has(issues, `testimonials.${i}.`)}
+        onRemove={(x) => notify(`Removed quote from ${x.name || 'someone'}`, true)}
+        render={(x, set, i) => (
+          <div className="ed-grid">
+            <Area label="Quote" value={x.quote} onChange={(quote) => set({ quote })} max={400} error={issues[`testimonials.${i}.quote`]} wide />
+            <Text label="Name" value={x.name} onChange={(name) => set({ name })} error={issues[`testimonials.${i}.name`]} />
+            <Text label="Role" value={x.role} onChange={(role) => set({ role: role || undefined })} placeholder="CTO" />
+            <Text label="Company" value={x.company} onChange={(company) => set({ company: company || undefined })} />
+            <Text label="Link to them" value={x.url} onChange={(url) => set({ url: url || undefined })} placeholder="https://linkedin.com/in/…" error={issues[`testimonials.${i}.url`]} />
+          </div>
+        )}
+      />
+    </>
   );
 }

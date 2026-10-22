@@ -96,6 +96,7 @@ projects:
     impact: [2.1k stars, 90 contributors]
     stack: [Web Components, Lit, Style Dictionary]
     url: https://github.com/example/orbit-ui
+    live: https://example.com/orbit-ui
   - title: Foxlauncher
     client: Pale Fox Games
     year: 2015
@@ -113,3 +114,41 @@ skills:
   Frontend: [TypeScript, React, Astro, Web Components, WebGL]
   Platform: [Node, Edge, GraphQL, Postgres, Kafka]
   Delivery: [GitLab CI, GitHub Actions, Docker, Kubernetes]
+
+languages:
+  - { name: Slovak, level: Native }
+  - { name: English, level: Fluent }
+  - { name: German, level: Conversational }
+
+awards:
+  - title: Best Streaming Experience
+    by: Craft & Code Awards
+    year: 2022
+    note: For the Premiere Night Streaming Hub, shared with the Northwind team.
+  - title: Hackathon winner — accessible ticketing
+    by: Danube Frontend Conf
+    year: 2019
+
+certifications:
+  - { name: AWS Certified Solutions Architect – Associate, issuer: Amazon Web Services, year: 2023 }
+  - { name: Certified Kubernetes Application Developer, issuer: CNCF, year: 2022 }
+
+talks:
+  - { title: Shipping a premiere to 40 locales without waking anyone up, kind: talk, venue: Danube Frontend Conf, year: 2023 }
+  - { title: Container queries in production, kind: article, venue: Pixel Press, year: 2024, url: https://example.com/container-queries }
+  - { title: On call for movie night, kind: podcast, venue: The Deploy Friday Show, year: 2022 }
+
+interests:
+  - { name: Bouldering, note: V5 on a good day }
+  - { name: Analog photography, note: Mostly Bratislava rooftops at dawn }
+  - { name: Synthesizers }
+
+testimonials:
+  - quote: Nova took our launch from "please don't crash" to the calmest premiere night we've ever had. Eighteen million visits and nobody on the team got paged.
+    name: Mara Lindqvist
+    role: VP Engineering
+    company: Northwind Pictures
+  - quote: Rare mix — ships fast, writes things down, and makes everyone around her better at both.
+    name: Tomas Reiter
+    role: Head of Product
+    company: The Weekly Ledger

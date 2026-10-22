@@ -76,3 +76,21 @@ test('ZIP: only profile files are read — connections and messages are never de
   assert.ok(!JSON.stringify(importLinkedIn(files)).includes('SECRET'));
   assert.throws(() => readLinkedInZip(zipSync({ 'other.txt': strToU8('x') })), /No LinkedIn profile files/);
 });
+
+test('honors, certifications, languages, publications and visible recommendations', () => {
+  const { profile, notes } = importLinkedIn({
+    'Profile.csv': profileCsv,
+    'Honors.csv': 'Title,Description,Issued On\n"Best Developer Tool",Team award for the deploy dashboard,Nov 2024\n',
+    'Certifications.csv': 'Name,Url,Authority,Started On,Finished On,License Number\nCKA,https://www.credly.com/badges/abc,CNCF,Mar 2022,,X1\n',
+    'Languages.csv': 'Name,Proficiency\nSlovak,Native or bilingual proficiency\nEnglish,Full professional proficiency\nGerman,Elementary proficiency\n',
+    'Publications.csv': 'Name,Published On,Description,Publisher,Url\nBoring deploys,May 2023,On calm releases,Pixel Press,https://example.com/boring\n',
+    'Recommendations_Received.csv': 'First Name,Last Name,Company,Job Title,Text,Creation Date,Status\nMara,Lind,Northwind,CTO,"Jane made our launches calm.",01/02/24,VISIBLE\nHidden,Person,X,Y,"Not shown on LinkedIn",01/02/24,HIDDEN\n',
+  });
+  assert.deepEqual(profile.awards, [{ title: 'Best Developer Tool', year: 2024, note: 'Team award for the deploy dashboard' }]);
+  assert.deepEqual(profile.certifications, [{ name: 'CKA', issuer: 'CNCF', year: 2022, url: 'https://www.credly.com/badges/abc' }]);
+  assert.deepEqual(profile.languages, [{ name: 'Slovak', level: 'Native' }, { name: 'English', level: 'Fluent' }, { name: 'German', level: 'Basic' }]);
+  assert.deepEqual(profile.talks, [{ title: 'Boring deploys', kind: 'article', venue: 'Pixel Press', year: 2023, url: 'https://example.com/boring' }]);
+  assert.deepEqual(profile.testimonials, [{ quote: 'Jane made our launches calm.', name: 'Mara Lind', role: 'CTO', company: 'Northwind' }], 'hidden recommendations stay out');
+  assert.equal(profile.skills?.Certifications, undefined, 'certifications are their own section now');
+  assert.ok(notes.some((n) => /1 recommendation/.test(n)) && notes.some((n) => /happy to be quoted/.test(n)));
+});

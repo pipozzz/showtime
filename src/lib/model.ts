@@ -26,8 +26,20 @@ export interface Project {
   blurb: string;
   impact?: string[];
   stack?: string[];
+  /** Source code (public projects). */
   url?: string;
+  /** The running thing: a site, an app store page, a demo. Fine for NDA work that's public-facing. */
+  live?: string;
+  /** A screenshot or poster, https:// image URL. */
+  image?: string;
 }
+export interface Award { title: string; by?: string; year?: number; url?: string; note?: string }
+export interface Certification { name: string; issuer?: string; year?: number; url?: string }
+export type TalkKind = 'talk' | 'article' | 'podcast' | 'video' | 'book';
+export interface Talk { title: string; kind?: TalkKind; venue?: string; year?: number; url?: string }
+export interface Language { name: string; level?: string }
+export interface Interest { name: string; note?: string }
+export interface Testimonial { quote: string; name: string; role?: string; company?: string; url?: string }
 export interface Education { school: string; degree: string; from: number; to: number }
 
 export interface Profile {
@@ -48,6 +60,14 @@ export interface Profile {
   projects?: Project[];
   education?: Education[];
   skills?: Record<string, string[]>;
+  awards?: Award[];
+  certifications?: Certification[];
+  /** Talks, articles, podcasts, videos, books. */
+  talks?: Talk[];
+  languages?: Language[];
+  /** Hobbies and interests — the person behind the work. */
+  interests?: Interest[];
+  testimonials?: Testimonial[];
   /** Commits per day ('YYYY-MM-DD' → n) from `starring scan` or an importer; drives the real heatmap. */
   activity?: Record<string, number>;
   /** The owner's own analytics for their profile page. */
@@ -117,7 +137,24 @@ export const validate = (p: Profile): Issues => {
     if (pr.url && !/^https?:/.test(pr.url)) out[`projects.${i}.url`] = 'Must start with https://';
     if (pr.url && pr.visibility === 'nda') out[`projects.${i}.url`] = 'NDA projects should not link to code';
   });
+  p.projects?.forEach((pr, i) => {
+    if (pr.live && !/^https?:\/\//.test(pr.live)) out[`projects.${i}.live`] = 'Must start with https://';
+    if (pr.image && !/^https:\/\/\S+$/.test(pr.image)) out[`projects.${i}.image`] = 'An https:// image address';
+  });
   p.clients?.forEach((c, i) => req(`clients.${i}.name`, c.name));
+  const link = (path: string, v?: string) => { if (v && !/^https?:\/\//.test(v)) out[path] = 'Must start with https://'; };
+  const year = (path: string, v?: number) => { if (v !== undefined && v !== null && (!Number.isInteger(v) || v < 1950 || v > THIS_YEAR + 1)) out[path] = `A year between 1950 and ${THIS_YEAR + 1}`; };
+  p.awards?.forEach((a, i) => { req(`awards.${i}.title`, a.title); year(`awards.${i}.year`, a.year); link(`awards.${i}.url`, a.url); });
+  p.certifications?.forEach((c, i) => { req(`certifications.${i}.name`, c.name); year(`certifications.${i}.year`, c.year); link(`certifications.${i}.url`, c.url); });
+  p.talks?.forEach((t, i) => { req(`talks.${i}.title`, t.title); year(`talks.${i}.year`, t.year); link(`talks.${i}.url`, t.url); });
+  p.languages?.forEach((l, i) => req(`languages.${i}.name`, l.name));
+  p.interests?.forEach((x, i) => req(`interests.${i}.name`, x.name));
+  p.testimonials?.forEach((t, i) => {
+    req(`testimonials.${i}.quote`, t.quote);
+    req(`testimonials.${i}.name`, t.name);
+    if ((t.quote?.length ?? 0) > 400) out[`testimonials.${i}.quote`] = 'Keep it under 400 characters — the best quotes are short';
+    link(`testimonials.${i}.url`, t.url);
+  });
   p.education?.forEach((e, i) => req(`education.${i}.school`, e.school));
   const pl = p.analytics?.plausible;
   if (pl && (pl.domain || pl.host)) {

@@ -44,10 +44,26 @@ export const profileJsonLd = (p: Profile, url: string, image: string) => {
       ...(p.education?.length && {
         alumniOf: p.education.map((e) => ({ '@type': 'EducationalOrganization', name: e.school })),
       }),
-      ...(p.projects?.length && {
-        subjectOf: p.projects
-          .filter((pr) => pr.visibility === 'public' && isUrl(pr.url))
-          .map((pr) => ({ '@type': 'SoftwareSourceCode', name: pr.title, description: pr.blurb, codeRepository: pr.url })),
+      ...(p.awards?.length && { award: p.awards.map((a) => [a.title, a.by, a.year].filter(Boolean).join(', ')) }),
+      ...(p.certifications?.length && {
+        hasCredential: p.certifications.map((c) => ({
+          '@type': 'EducationalOccupationalCredential',
+          name: c.name,
+          ...(c.issuer && { recognizedBy: { '@type': 'Organization', name: c.issuer } }),
+          ...(isUrl(c.url) && { url: c.url }),
+        })),
+      }),
+      ...(p.languages?.length && { knowsLanguage: p.languages.map((l) => ({ '@type': 'Language', name: l.name })) }),
+      ...((p.projects?.length || p.talks?.length) && {
+        subjectOf: [
+          ...(p.projects ?? [])
+            .filter((pr) => pr.visibility === 'public' && isUrl(pr.url))
+            .map((pr) => ({ '@type': 'SoftwareSourceCode', name: pr.title, description: pr.blurb, codeRepository: pr.url })),
+          // talks and writing *by* this person
+          ...(p.talks ?? [])
+            .filter((t) => isUrl(t.url))
+            .map((t) => ({ '@type': t.kind === 'book' ? 'Book' : t.kind === 'article' ? 'Article' : t.kind === 'podcast' ? 'PodcastEpisode' : 'CreativeWork', name: t.title, url: t.url, author: { '@id': `${url}#person` } })),
+        ],
       }),
     },
   };

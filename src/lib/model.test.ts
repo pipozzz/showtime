@@ -90,3 +90,27 @@ test('per-profile Plausible: valid site ids and https origins only', () => {
   }
   assert.equal(plausibleTarget(base), null);
 });
+
+test('new sections: required fields, links, years, quote length, project live/image', () => {
+  const base: Profile = { handle: 'jane', profile: { name: 'Jane', role: 'Dev' } };
+  const bad = validate({
+    ...base,
+    awards: [{ title: '', year: 1800, url: 'ftp://x' }],
+    certifications: [{ name: 'CKA', url: 'javascript:alert(1)' }],
+    talks: [{ title: 'Talk', year: THIS_YEAR + 5 }],
+    languages: [{ name: '' }],
+    interests: [{ name: ' ' }],
+    testimonials: [{ quote: 'x'.repeat(401), name: '' }],
+    projects: [{ title: 'P', year: 2024, visibility: 'nda', blurb: 'b', live: 'example.com', image: 'http://insecure/img.png' }],
+  });
+  for (const k of ['awards.0.title', 'awards.0.year', 'awards.0.url', 'certifications.0.url', 'talks.0.year', 'languages.0.name', 'interests.0.name', 'testimonials.0.quote', 'testimonials.0.name', 'projects.0.live', 'projects.0.image']) {
+    assert.ok(bad[k], k);
+  }
+  const ok = validate({
+    ...base,
+    awards: [{ title: 'Winner', by: 'Conf', year: 2024, url: 'https://conf.example' }],
+    testimonials: [{ quote: 'Great.', name: 'Mara' }],
+    projects: [{ title: 'P', year: 2024, visibility: 'nda', blurb: 'b', live: 'https://p.example', image: 'https://p.example/s.png' }],
+  });
+  assert.deepEqual(ok, {}, 'NDA projects may have a live link and an image');
+});

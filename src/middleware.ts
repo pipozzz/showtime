@@ -20,7 +20,8 @@ const csp = (frameable: boolean) =>
     `script-src 'self' 'unsafe-inline' ${origin(process.env.PLAUSIBLE_SRC)}`.trim(),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob:",
+    // https: for project screenshots owners link from their own hosting; scripts stay locked down
+    "img-src 'self' data: blob: https:",
     "connect-src 'self' https:",
     "form-action 'self'",
     "base-uri 'self'",

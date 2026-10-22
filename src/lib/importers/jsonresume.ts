@@ -1,5 +1,5 @@
 // Local JSON Resume → Starring draft. No network requests or storage.
-import { blankProfile, THIS_YEAR, type Profile } from '../model.ts';
+import { blankProfile, THIS_YEAR, type Award, type Certification, type Interest, type Language, type Profile, type Talk, type Testimonial } from '../model.ts';
 
 type RecordValue = Record<string, unknown>;
 
@@ -148,6 +148,40 @@ export function importJsonResume(json: unknown, opts: { base?: Profile } = {}): 
     Object.defineProperty(skills, group, { value: values, enumerable: true, configurable: true, writable: true });
   }
 
+  const awards: Award[] = entries(resume.awards, 'awards').flatMap((e, i) => {
+    const title = text(e.title, `awards[${i}].title`);
+    if (!title) return [];
+    const by = text(e.awarder, `awards[${i}].awarder`), year = dateYear(e.date, `awards[${i}].date`), note = text(e.summary, `awards[${i}].summary`);
+    return [{ title, ...(by && { by }), ...(year && { year }), ...(note && { note: note.slice(0, 160) }) }];
+  });
+  const certifications: Certification[] = entries(resume.certificates, 'certificates').flatMap((e, i) => {
+    const name = text(e.name, `certificates[${i}].name`);
+    if (!name) return [];
+    const issuer = text(e.issuer, `certificates[${i}].issuer`), year = dateYear(e.date, `certificates[${i}].date`), link = url(e.url, `certificates[${i}].url`);
+    return [{ name, ...(issuer && { issuer }), ...(year && { year }), ...(link && { url: link }) }];
+  });
+  const talks: Talk[] = entries(resume.publications, 'publications').flatMap((e, i) => {
+    const title = text(e.name, `publications[${i}].name`);
+    if (!title) return [];
+    const venue = text(e.publisher, `publications[${i}].publisher`), year = dateYear(e.releaseDate, `publications[${i}].releaseDate`), link = url(e.url, `publications[${i}].url`);
+    return [{ title, kind: 'article' as const, ...(venue && { venue }), ...(year && { year }), ...(link && { url: link }) }];
+  });
+  const languages: Language[] = entries(resume.languages, 'languages').flatMap((e, i) => {
+    const name = text(e.language, `languages[${i}].language`);
+    const level = text(e.fluency, `languages[${i}].fluency`);
+    return name ? [{ name, ...(level && { level }) }] : [];
+  });
+  const interests: Interest[] = entries(resume.interests, 'interests').flatMap((e, i) => {
+    const name = text(e.name, `interests[${i}].name`);
+    const keywords = strings(e.keywords, `interests[${i}].keywords`);
+    return name ? [{ name, ...(keywords.length && { note: keywords.join(', ') }) }] : [];
+  });
+  const testimonials: Testimonial[] = entries(resume.references, 'references').flatMap((e, i) => {
+    const name = text(e.name, `references[${i}].name`);
+    const quote = text(e.reference, `references[${i}].reference`);
+    return name && quote ? [{ name, quote: quote.length > 400 ? `${quote.slice(0, 399).trimEnd()}…` : quote }] : [];
+  });
+
   const profile: Profile = {
     ...base,
     profile: {
@@ -162,9 +196,15 @@ export function importJsonResume(json: unknown, opts: { base?: Profile } = {}): 
     education: append(base.education ?? [], education, (item) => JSON.stringify([item.school, item.degree, item.from])),
     projects: append(base.projects ?? [], projects, (item) => item.title),
     skills,
+    awards: append(base.awards ?? [], awards, (x) => x.title.toLowerCase()),
+    certifications: append(base.certifications ?? [], certifications, (x) => x.name.toLowerCase()),
+    talks: append(base.talks ?? [], talks, (x) => x.title.toLowerCase()),
+    languages: append(base.languages ?? [], languages, (x) => x.name.toLowerCase()),
+    interests: append(base.interests ?? [], interests, (x) => x.name.toLowerCase()),
+    testimonials: append(base.testimonials ?? [], testimonials, (x) => `${x.name}|${x.quote.slice(0, 40)}`.toLowerCase()),
   };
   if (!opts.base) notes.push('Choose your Starring handle and review the imported draft before publishing.');
-  const skipped = ['volunteer', 'awards', 'certificates', 'publications', 'languages', 'interests', 'references'].filter((key) => Array.isArray(resume[key]) && resume[key].length);
+  const skipped = ['volunteer'].filter((key) => Array.isArray(resume[key]) && resume[key].length);
   if (skipped.length) notes.push(`Not imported (no matching Starring fields): ${skipped.join(', ')}.`);
   return { profile, notes };
 }

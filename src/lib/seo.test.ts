@@ -44,3 +44,23 @@ test('JSON-LD describes a Person without leaking NDA work or mailto links', () =
   assert.equal(person.alumniOf[0].name, 'TU Wien');
   assert.deepEqual(person.subjectOf.map((s: any) => s.name), ['open-thing']);
 });
+
+test('JSON-LD: awards, credentials, languages and talks by the person', () => {
+  const ld = profileJsonLd(
+    {
+      handle: 'jane',
+      profile: { name: 'Jane', role: 'Dev' },
+      awards: [{ title: 'Winner', by: 'Conf', year: 2024 }],
+      certifications: [{ name: 'CKA', issuer: 'CNCF', url: 'https://cncf.example/v' }],
+      languages: [{ name: 'Slovak', level: 'Native' }],
+      talks: [{ title: 'Calm', kind: 'article', url: 'https://blog.example/calm' }, { title: 'No link', kind: 'talk' }],
+    },
+    'https://starring.dev/jane/',
+    'https://starring.dev/og/jane.png',
+  );
+  const person = ld.mainEntity as Record<string, unknown>;
+  assert.deepEqual(person.award, ['Winner, Conf, 2024']);
+  assert.deepEqual(person.hasCredential, [{ '@type': 'EducationalOccupationalCredential', name: 'CKA', recognizedBy: { '@type': 'Organization', name: 'CNCF' }, url: 'https://cncf.example/v' }]);
+  assert.deepEqual(person.knowsLanguage, [{ '@type': 'Language', name: 'Slovak' }]);
+  assert.deepEqual(person.subjectOf, [{ '@type': 'Article', name: 'Calm', url: 'https://blog.example/calm', author: { '@id': 'https://starring.dev/jane/#person' } }]);
+});

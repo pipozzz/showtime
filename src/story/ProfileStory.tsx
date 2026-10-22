@@ -1,8 +1,10 @@
-import { activityGrid, totals, heatmap, type Profile, type Visibility } from '../lib/model';
+import { activityGrid, totals, heatmap, type Profile, type TalkKind, type Visibility } from '../lib/model';
 import { link } from '../lib/url';
 import './story.css';
 
 const VIS_LABEL: Record<Visibility, string> = { public: 'Open source', private: 'Private repo', nda: 'Under NDA' };
+const KIND_LABEL: Record<TalkKind, string> = { talk: 'Talk', article: 'Article', podcast: 'Podcast', video: 'Video', book: 'Book' };
+const joined = (...xs: (string | number | undefined | null)[]) => xs.filter((x) => x !== undefined && x !== null && x !== '').join(' · ');
 const n = (v: number) => (v || 0).toLocaleString('en');
 
 interface Props {
@@ -37,6 +39,12 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
   const links = Object.entries(me.links ?? {}).filter(([, v]) => v);
   const platforms = (p.platforms ?? []).filter((pl) => pl.name);
   const hasActivity = !!latest && latest.public + latest.private > 0;
+  const awards = (p.awards ?? []).filter((a) => a.title);
+  const certs = (p.certifications ?? []).filter((c) => c.name);
+  const talks = (p.talks ?? []).filter((x) => x.title);
+  const languages = (p.languages ?? []).filter((l) => l.name);
+  const interests = (p.interests ?? []).filter((x) => x.name);
+  const testimonials = (p.testimonials ?? []).filter((x) => x.quote && x.name);
 
   const sec = (id: string) => ({
     'data-section': id,
@@ -46,7 +54,7 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
     }),
   });
   let act = 0;
-  const roman = () => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][act++];
+  const roman = () => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][act++];
   const Label = ({ children }: { children: string }) => (
     <h2 className="act-label mono"><span className="num">Act {roman()}</span><span>{children}</span></h2>
   );
@@ -139,6 +147,7 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
                   <span>{pr.year}</span>
                   <span className={pr.visibility === 'public' ? 'tag solid' : 'tag'}>{VIS_LABEL[pr.visibility]}</span>
                 </div>
+                {pr.image && <img className="project-image" src={pr.image} alt={`${pr.title} — screenshot`} loading="lazy" decoding="async" />}
                 <h3 className="display project-title">{pr.title}</h3>
                 {pr.client && <p className="mono">for <span className="accent">{pr.client}</span>{pr.role && <> · {pr.role}</>}</p>}
                 <p className="project-blurb">{pr.blurb}</p>
@@ -149,10 +158,62 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
                 )}
                 <ul className="impact">{pr.impact?.map((x) => <li className="display" key={x}>{x}</li>)}</ul>
                 <div className="chips">{pr.stack?.map((s) => <span className="tag" key={s}>{s}</span>)}</div>
-                {pr.url && pr.visibility !== 'nda' && <a className="mono project-link" href={pr.url}>View source ↗</a>}
+                {(pr.live || (pr.url && pr.visibility !== 'nda')) && (
+                  <p className="project-links mono">
+                    {pr.live && <a className="project-link" href={pr.live}>See it live ↗</a>}
+                    {pr.url && pr.visibility !== 'nda' && <a className="project-link" href={pr.url}>View source ↗</a>}
+                  </p>
+                )}
               </article>
             ))}
           </div>
+        </section>
+      )}
+
+      {(awards.length > 0 || certs.length > 0) && (
+        <section className="act" id="awards" {...sec(awards.length ? 'awards' : 'certifications')}>
+          <Label>Accolades</Label>
+          {awards.length > 0 && (
+            <ul className="awards">
+              {awards.map((a, i) => (
+                <li className="award reveal" key={i}>
+                  <span className="award-mark accent" aria-hidden="true">✦</span>
+                  <h3 className="display">{a.url ? <a href={a.url}>{a.title}</a> : a.title}</h3>
+                  {(a.by || a.year) && <p className="mono">{joined(a.by, a.year)}</p>}
+                  {a.note && <p className="muted">{a.note}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {certs.length > 0 && (
+            <div className="certs" {...sec('certifications')}>
+              <p className="mono accent">Certified</p>
+              <ul>
+                {certs.map((c, i) => (
+                  <li className="reveal" key={i}>
+                    <span className="cert-name">{c.name}</span>
+                    <span className="mono muted">{joined(c.issuer, c.year)}</span>
+                    {c.url && <a className="mono project-link" href={c.url} aria-label={`Verify ${c.name}`}>Verify ↗</a>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
+      {talks.length > 0 && (
+        <section className="act" id="talks" {...sec('talks')}>
+          <Label>Press tour</Label>
+          <ul className="talks">
+            {talks.map((x, i) => (
+              <li className="reveal" key={i}>
+                <span className="tag">{KIND_LABEL[x.kind ?? 'talk']}</span>
+                <h3>{x.url ? <a href={x.url}>{x.title} ↗</a> : x.title}</h3>
+                {(x.venue || x.year) && <p className="mono muted">{joined(x.venue, x.year)}</p>}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -193,7 +254,7 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
         </section>
       )}
 
-      {((p.education?.length ?? 0) > 0 || skills.length > 0) && (
+      {((p.education?.length ?? 0) > 0 || skills.length > 0 || languages.length > 0) && (
         <section className="act" id="training" {...sec('education')}>
           <Label>Training montage</Label>
           <div className="edu-skills">
@@ -213,7 +274,45 @@ export default function ProfileStory({ p, preview = false, onSection, site }: Pr
                   <p className="skill-items">{items.join(' / ')}</p>
                 </div>
               ))}
+              {languages.length > 0 && (
+                <div className="reveal" {...sec('languages')}>
+                  <p className="mono accent">Languages</p>
+                  <p className="skill-items">{languages.map((l) => (l.level ? `${l.name} (${l.level})` : l.name)).join(' / ')}</p>
+                </div>
+              )}
             </div>
+          </div>
+        </section>
+      )}
+
+      {interests.length > 0 && (
+        <section className="act" id="offscreen" {...sec('interests')}>
+          <Label>Behind the scenes</Label>
+          <ul className="interests">
+            {interests.map((x, i) => (
+              <li className="reveal" key={i}>
+                <span className="display interest-name">{x.name}</span>
+                {x.note && <span className="muted">{x.note}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {testimonials.length > 0 && (
+        <section className="act" id="critics" {...sec('testimonials')}>
+          <Label>The critics</Label>
+          <div className="quotes">
+            {testimonials.map((x, i) => (
+              <figure className="quote reveal" key={i}>
+                <span className="quote-mark display accent" aria-hidden="true">“</span>
+                <blockquote>{x.quote}</blockquote>
+                <figcaption className="mono">
+                  — {x.url ? <a href={x.url}>{x.name}</a> : x.name}
+                  {(x.role || x.company) && <span className="muted">, {[x.role, x.company].filter(Boolean).join(' @ ')}</span>}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </section>
       )}

@@ -48,7 +48,7 @@ Most working developers' best code sits in private repos: client projects, the a
 
 ## What you get
 
-- **A scroll story in acts.** Hero, the numbers, the client wall, the timeline, featured work, activity, school and skills, and closing credits.
+- **A scroll story in acts.** Hero, the numbers, the client wall, the timeline, featured work (with screenshots and live links), **accolades** (awards and certifications), **press tour** (talks, articles, podcasts, books), activity, school, skills and languages, **behind the scenes** (hobbies), **the critics** (testimonials), and closing credits. Empty sections simply don't appear.
 - **Proper NDA handling.** You name the client and describe the impact. The code, internal links and diagrams appear as redaction bars.
 - **Public and private, side by side.** It shows "73% of this work lives in private repos" and makes that the headline instead of an excuse.
 - **An instant draft from GitHub.** Type a username and get your name, links, top repos, languages and topics in seconds.
@@ -188,9 +188,9 @@ npx starring-cli scan ~/work ~/clients -e me@agency.com --exclude github.com
 
 It counts *your* commits in local repos, including client work and a self-hosted GitLab, de-duplicated across clones. It writes only dates and counts to `starring-activity.json`: no code, messages, repo names or emails, and nothing is uploaded. Drop the file into the editor's import, and your private commits per year, platforms and a **real commits-per-day heatmap** show up on your stage.
 
-**LinkedIn:** request your data export (LinkedIn → Settings → Data privacy → *Get a copy of your data*, pick Profile, Positions, Education, Skills). Then drop the ZIP into the editor's import to fill your name, role, career timeline, education and skills. It happens entirely in your browser, and only those profile files are read: messages and connections are never opened.
+**LinkedIn:** request your data export (LinkedIn → Settings → Data privacy → *Get a copy of your data*, pick Profile, Positions, Education, Skills, or simply the whole archive). Then drop the ZIP into the editor's import to fill your name, role, career timeline, education, skills, certifications, honors, languages, publications and recommendations. It happens entirely in your browser, and only those profile files are read: messages and connections are never opened.
 
-**JSON Resume:** paste or drop a `resume.json` into the import dialog to fill your timeline, education, skills and projects. Contributed by @dailyun.
+**JSON Resume:** paste or drop a `resume.json` into the import dialog to fill your timeline, education, skills, projects, awards, certificates, publications, languages, interests and references. Contributed by @dailyun.
 
 **Planned:** GitLab (including self-hosted), Bitbucket and Gitea importers.
 
