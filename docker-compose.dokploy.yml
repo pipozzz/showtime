@@ -35,6 +35,12 @@ services:
       # the app is only reachable through the platform's proxy, so X-Forwarded-For is trustworthy
       TRUST_PROXY: ${TRUST_PROXY:-true}
       CUSTOM_DOMAINS: ${CUSTOM_DOMAINS:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CV_IMPORT_PROVIDER: ${CV_IMPORT_PROVIDER:-}
+      CV_IMPORT_MODEL: ${CV_IMPORT_MODEL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      CV_IMPORT_DAILY_LIMIT: ${CV_IMPORT_DAILY_LIMIT:-200}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
       SIGNUP_ALLOWLIST: ${SIGNUP_ALLOWLIST:-}

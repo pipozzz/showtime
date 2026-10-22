@@ -255,6 +255,9 @@ a.ed-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ed-modal-box { width: min(640px, 100%); background: var(--panel); border: 1px solid var(--line); padding: 28px; display: grid; gap: 14px; }
 .ed-modal-box h3 { font-size: 40px; }
 .ed-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ed-cv-drop { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 18px; border: 1px dashed var(--line); }
+.ed-sources .ed-cv-paste { grid-column: 1 / -1; }
+.ed-sources .ed-inline textarea { flex: 1; min-width: 0; resize: vertical; font: inherit; }
 .ed-share { width: min(720px, 100%); max-height: calc(100svh - 32px); overflow: auto; }
 .ed-share-poster { width: 100%; height: auto; border: 1px solid var(--line); display: block; }
 .ed-share-link { display: flex; gap: 8px; }

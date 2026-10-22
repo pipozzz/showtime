@@ -190,6 +190,8 @@ It counts *your* commits in local repos, including client work and a self-hosted
 
 **LinkedIn:** request your data export (LinkedIn → Settings → Data privacy → *Get a copy of your data*, pick Profile, Positions, Education, Skills, or simply the whole archive). Then drop the ZIP into the editor's import to fill your name, role, career timeline, education, skills, certifications, honors, languages, publications and recommendations. It happens entirely in your browser, and only those profile files are read: messages and connections are never opened.
 
+**Your CV, with AI (hosted and self-hosted with a key):** upload a PDF or Word CV, or paste any text, such as your LinkedIn *About* and experience or a bio. Claude or OpenAI turns it into a draft: roles, clients, NDA projects, school, skills, certifications, awards and languages. It uses only what the document says, and you review everything in the editor. Set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` to enable it ([settings](docs/self-hosting.md#configuration)).
+
 **JSON Resume:** paste or drop a `resume.json` into the import dialog to fill your timeline, education, skills, projects, awards, certificates, publications, languages, interests and references. Contributed by @dailyun.
 
 **Planned:** GitLab (including self-hosted), Bitbucket and Gitea importers.

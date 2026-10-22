@@ -59,6 +59,9 @@ const analytics = !!process.env.PLAUSIBLE_SRC;
   <p>A profile owner can connect <i>their own</i> Plausible account to their profile page. When you open such a page, it sends one anonymous page view (the page address and referrer) to the analytics server the owner chose. No script from that server runs on this site and no cookies are set. The owner, not us, is responsible for that analytics account.</p>
 
   <h2>Who processes data for us</h2>
+  {SERVER_MODE && (process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY) && (
+    <p><b>CV import.</b> If you choose to import a CV or paste text in the editor, that document is sent to {(process.env.CV_IMPORT_PROVIDER === 'openai' || !process.env.ANTHROPIC_API_KEY) ? 'OpenAI' : 'Anthropic'} only to turn it into a draft profile, and the result comes straight back to your editor. We don't store the document. The provider processes it on our behalf under its API terms.</p>
+  )}
   <p>{SERVER_MODE ? 'Hosting of the application and its database, and the email provider used to send account emails' : 'The static hosting provider'}{analytics ? ', and the analytics service' : ''}. They process data only on our behalf. Profile pages load fonts from Google Fonts, which receives your IP address when the page loads.</p>
 
   <h2>Your rights</h2>

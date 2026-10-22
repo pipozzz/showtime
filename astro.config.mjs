@@ -27,6 +27,7 @@ const serverRoutes = () => ({
         '/reset-password': 'src/server/routes/reset-password.astro',
         '/oembed': 'src/server/routes/oembed.ts',
         '/api/import/github': 'src/server/routes/import-github.ts',
+        '/api/import/cv': 'src/server/routes/import-cv.ts',
         '/api/report': 'src/server/routes/api-report.ts',
         '/api/access': 'src/server/routes/api-access.ts',
         '/api/domain': 'src/server/routes/api-domain.ts',

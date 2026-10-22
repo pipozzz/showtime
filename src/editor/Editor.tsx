@@ -9,6 +9,7 @@ import { LINKEDIN_FILES, importLinkedIn, readLinkedInZip, type LinkedInFiles } f
 import { link, pageLink } from '../lib/url';
 import GithubDialog from './GithubDialog';
 import ShareDialog from './ShareDialog';
+import CvDialog from './CvDialog';
 import Onboarding from './Onboarding';
 import { useServer, type SyncStatus } from './useServer';
 import { getTheme, hasTheme } from '../themes';
@@ -135,6 +136,8 @@ export default function Editor({ samples }: Props) {
   const [saved, setSaved] = useState<'saved' | 'saving' | 'off'>('saved');
   const [importOpen, setImportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [cvOpen, setCvOpen] = useState(false);
+  const cvProvider = server.me?.features?.cvImport ?? null;
   const [importMode, setImportMode] = useState<'fresh' | 'merge'>('merge');
   const [gh, setGh] = useState<{ open: boolean; user?: string; error?: string; busy?: boolean }>({ open: false });
   const [notes, setNotes] = useState<string[]>([]);
@@ -345,6 +348,7 @@ export default function Editor({ samples }: Props) {
           {menu === 'start' && (
             <div className="ed-menu" onMouseLeave={() => setMenu(null)}>
               <p className="ed-menu-h mono">Start from</p>
+              {cvProvider && <button type="button" className="ed-menu-gh" onClick={() => { setCvOpen(true); setMenu(null); }}>Your CV or any text… <span className="muted">AI draft</span></button>}
               <button type="button" className="ed-menu-gh" onClick={() => { setGh({ open: true }); setMenu(null); }}>GitHub profile… <span className="muted">instant draft</span></button>
               <button type="button" onClick={() => { commit(blankProfile()); setMenu(null); notify('Blank stage — Cmd+Z to undo', true); }}>Blank stage</button>
               {samples.map((s) => (
@@ -501,6 +505,7 @@ export default function Editor({ samples }: Props) {
         <Onboarding
           p={p}
           githubLinked={!!server.me?.user?.githubLinked}
+          cvProvider={cvProvider}
           host={location.host}
           onImported={imported}
           onFiles={loadFiles}
@@ -522,6 +527,15 @@ export default function Editor({ samples }: Props) {
           url={new URL(pageLink(server.own.handle), location.origin).href}
           poster={new URL(link(`og/${server.own.handle}.png`), location.origin).href}
           onClose={() => setShareOpen(false)}
+        />
+      )}
+      {cvOpen && cvProvider && (
+        <CvDialog
+          current={p}
+          provider={cvProvider}
+          signedIn={!!server.me?.user}
+          onDone={(next, notes, label) => { imported(next, notes, label); setCvOpen(false); }}
+          onClose={() => setCvOpen(false)}
         />
       )}
       {gh.open && <GithubDialog current={p} initialUser={gh.user} initialError={gh.error} onDone={imported} onClose={() => setGh({ open: false })} />}

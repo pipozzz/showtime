@@ -2,10 +2,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { HANDLE, RESERVED, type Profile } from '../lib/model';
 import { importGithub } from '../lib/importers/github';
+import { mergeCv } from '../lib/importers/cv';
+import { PROVIDER_LABEL, readCvRemote } from './CvDialog';
 
 interface Props {
   p: Profile;
   githubLinked: boolean;
+  /** 'anthropic' | 'openai' when the instance reads CVs with AI */
+  cvProvider?: string | null;
   /** apply an imported draft (merges are done by the caller-provided base) */
   onImported: (p: Profile, notes: string[], label: string) => void;
   /** YAML / JSON Resume / scan / LinkedIn ZIP or CSVs */
@@ -20,7 +24,7 @@ const LINKEDIN_EXPORT = 'https://www.linkedin.com/mypreferences/d/download-my-da
 const slug = (s: string) =>
   s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 39);
 
-export default function Onboarding({ p, githubLinked, onImported, onFiles, onClaim, onSkip, host }: Props) {
+export default function Onboarding({ p, githubLinked, cvProvider, onImported, onFiles, onClaim, onSkip, host }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [done, setDone] = useState<string[]>([]);
   const [busy, setBusy] = useState('');
@@ -28,6 +32,8 @@ export default function Onboarding({ p, githubLinked, onImported, onFiles, onCla
   const [ghUser, setGhUser] = useState('');
   const files = useRef<HTMLInputElement>(null);
   const linkedin = useRef<HTMLInputElement>(null);
+  const cv = useRef<HTMLInputElement>(null);
+  const [cvText, setCvText] = useState('');
 
   const mark = (what: string) => setDone((d) => [...new Set([...d, what])]);
   const run = async (what: string, fn: () => Promise<void>) => {
@@ -54,6 +60,11 @@ export default function Onboarding({ p, githubLinked, onImported, onFiles, onCla
     run('GitHub', async () => {
       const { profile, notes } = await importGithub(ghUser, { base: p });
       onImported(profile, notes, `Imported @${profile.handle} from GitHub`);
+    });
+  const importCv = (input: { file: File } | { text: string }) =>
+    run('CV', async () => {
+      const { profile, notes } = await readCvRemote(input);
+      onImported(mergeCv(p, profile, 'merge'), notes, 'file' in input ? `Imported ${input.file.name}` : 'Imported your CV');
     });
   const pick = (what: string, input: HTMLInputElement | null) => {
     if (!input) return;
@@ -91,8 +102,22 @@ export default function Onboarding({ p, githubLinked, onImported, onFiles, onCla
         {step === 1 ? (
           <>
             <h3 className="display">Bring your work in</h3>
-            <p className="muted">Start from what already exists — you can combine sources. Everything is converted in your browser; you review it before anything is public.</p>
+            <p className="muted">Start from what already exists — you can combine sources. {cvProvider ? 'Your CV is read by AI on this instance; everything else is converted in your browser.' : 'Everything is converted in your browser.'} You review it all before anything is public.</p>
             <ul className="ed-sources">
+              {cvProvider && (
+                <li className={done.includes('CV') ? 'done' : ''}>
+                  <b>Your CV <span className="tag solid">fastest</span></b>
+                  <span className="muted">Upload a PDF or Word file, or paste any text about your career. {PROVIDER_LABEL[cvProvider] ?? 'AI'} reads it into roles, clients, projects, school and skills — nothing is stored.</span>
+                  <div className="ed-inline ed-cv-upload">
+                    <input ref={cv} type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importCv({ file: f }); e.target.value = ''; }} />
+                    <button type="button" className="ed-btn" disabled={!!busy} onClick={() => cv.current?.click()}>{busy === 'CV' ? 'Reading… (~30 s)' : 'Upload CV'}</button>
+                  </div>
+                  <form className="ed-inline ed-cv-paste" onSubmit={(e) => { e.preventDefault(); if (cvText.trim().length >= 40) importCv({ text: cvText }); }}>
+                    <textarea className="ed-input" rows={2} placeholder="…or paste your CV / LinkedIn text" value={cvText} onChange={(e) => setCvText(e.target.value)} aria-label="Paste your CV or LinkedIn text" />
+                    <button type="submit" className="ed-btn ghost" disabled={!!busy || cvText.trim().length < 40}>Read</button>
+                  </form>
+                </li>
+              )}
               <li className={done.includes('GitHub') ? 'done' : ''}>
                 <b>GitHub</b>
                 <span className="muted">Repos, languages, links{githubLinked ? ', exact contributions incl. private counts' : ''}.</span>
