@@ -119,4 +119,10 @@ jobs:
           HOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
         run: |
           if [ -z "$HOOK" ]; then echo "No DOKPLOY_DEPLOY_WEBHOOK secret — skipping."; exit 0; fi
-          curl -fsS -X POST "$HOOK" -H 'Content-Type: application/json' -d '{}' && echo "Redeploy triggered."
+          # a pasted secret often carries a trailing newline, spaces or quotes
+          HOOK=$(printf '%s' "$HOOK" | tr -d '[:space:]"'"'")
+          case "$HOOK" in
+            http://*|https://*) ;;
+            *) echo "::error::DOKPLOY_DEPLOY_WEBHOOK must be the full webhook URL (https://…) from the service's Deployments tab."; exit 1 ;;
+          esac
+          curl -fsS --retry 2 -X POST "$HOOK" -H 'Content-Type: application/json' -d '{}' >/dev/null && echo "Redeploy triggered."
